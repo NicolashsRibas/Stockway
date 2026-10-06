@@ -1,0 +1,124 @@
+### StrockWay - testes da API direto no VS Code
+### Instale a extensão "REST Client" (humao.rest-client) e clique em "Send Request"
+### acima de cada requisição. O servidor precisa estar rodando.
+
+@api = http://localhost:8080/api
+
+### Verifica se a API está no ar
+GET {{api}}/health
+
+### Dashboard
+GET {{api}}/dashboard
+
+### Listar produtos (todos)
+GET {{api}}/produtos
+
+### Buscar produtos por nome/código, com filtro e ordenação
+GET {{api}}/produtos?busca=luva&ordenar=valor_em_estoque
+
+### Só produtos com estoque baixo
+GET {{api}}/produtos?status=BAIXO
+
+### Só produtos que vencem em breve
+GET {{api}}/produtos?validade=VENCE_EM_BREVE
+
+### Consultar um produto (com as últimas movimentações)
+GET {{api}}/produtos/PAR-001
+
+### Cadastrar produto
+POST {{api}}/produtos
+Content-Type: application/json
+
+{
+  "codigo": "LUV-020",
+  "nome": "Luva de raspa (par)",
+  "quantidade": 40,
+  "valor_unitario": 12.50,
+  "peso_kg": 0.18,
+  "validade": "2027-12-31",
+  "endereco": { "corredor": "B", "prateleira": "04" },
+  "estoque_minimo": 15,
+  "estoque_maximo": 150,
+  "responsavel": "Maria Souza"
+}
+
+### Atualizar produto (envie só o que mudou)
+PUT {{api}}/produtos/LUV-020
+Content-Type: application/json
+
+{
+  "valor_unitario": 13.90,
+  "peso_kg": 0.2,
+  "endereco": { "prateleira": "05" },
+  "responsavel": "Maria Souza"
+}
+
+### Remover a validade (produto passa a ser não perecível)
+PUT {{api}}/produtos/LUV-020
+Content-Type: application/json
+
+{
+  "remover_validade": true,
+  "responsavel": "Maria Souza"
+}
+
+### Registrar ENTRADA (valor_unitario é opcional: recalcula o custo médio)
+POST {{api}}/movimentacoes/entrada
+Content-Type: application/json
+
+{
+  "codigo": "LUV-020",
+  "quantidade": 30,
+  "valor_unitario": 12.00,
+  "responsavel": "Carlos Lima",
+  "observacao": "NF 98765"
+}
+
+### Registrar SAÍDA
+POST {{api}}/movimentacoes/saida
+Content-Type: application/json
+
+{
+  "codigo": "LUV-020",
+  "quantidade": 10,
+  "responsavel": "João Silva",
+  "observacao": "Requisição 554 - manutenção"
+}
+
+### AJUSTE de inventário (quantidade contada fisicamente; observação obrigatória)
+POST {{api}}/movimentacoes/ajuste
+Content-Type: application/json
+
+{
+  "codigo": "LUV-020",
+  "quantidade_contada": 58,
+  "responsavel": "Ana Costa",
+  "observacao": "Inventário mensal - 2 pares danificados"
+}
+
+### Log de movimentações (mais recentes primeiro)
+GET {{api}}/movimentacoes?limite=20
+
+### Log filtrado por produto, tipo e período
+GET {{api}}/movimentacoes?codigo=LUV-020&tipo=SAIDA&data_inicio=2026-10-01&data_fim=2026-10-31
+
+### Histórico de um produto
+GET {{api}}/produtos/LUV-020/movimentacoes
+
+### Produtos com baixo estoque
+GET {{api}}/estoque/baixo
+
+### Todos os alertas (baixo, acima do máximo, validade)
+GET {{api}}/estoque/alertas
+
+### Vencidos e que vencem nos próximos 60 dias
+GET {{api}}/estoque/validade?dias=60
+
+### Remover produto (só funciona com saldo zero)
+DELETE {{api}}/produtos/FIT-002
+Content-Type: application/json
+
+{
+  "responsavel": "Maria Souza",
+  "motivo": "Item descontinuado"
+}

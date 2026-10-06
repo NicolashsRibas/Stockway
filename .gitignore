@@ -1,0 +1,18 @@
+# Compilação .NET
+bin/
+obj/
+*.user
+*.suo
+
+# Banco de dados local (não versionar o estoque real)
+*.db
+*.db-shm
+*.db-wal
+
+# Visual Studio / Rider
+.vs/
+.idea/
+
+# Sistema
+.DS_Store
+Thumbs.db

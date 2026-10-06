@@ -1,0 +1,11 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "StrockWay (depurar)",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/StrockWay.csproj"
+        }
+    ]
+}

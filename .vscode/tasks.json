@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Compilar",
+            "type": "shell",
+            "command": "dotnet build",
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Iniciar servidor (com dados de exemplo)",
+            "type": "shell",
+            "command": "dotnet run -- --exemplo",
+            "isBackground": true,
+            "problemMatcher": []
+        }
+    ]
+}
