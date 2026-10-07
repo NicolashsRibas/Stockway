@@ -1,0 +1,62 @@
+create schema if not exists stockway;
+
+CREATE TABLE stockway.CATEGORIA (
+    id INT NOT NULL AUTO_INCREMENT,
+    nome VARCHAR(50) NOT NULL,
+
+    CONSTRAINT PK_CATEGORIA PRIMARY KEY (id)
+);
+
+CREATE TABLE stockway.ROLE (
+    id INT NOT NULL AUTO_INCREMENT,
+    nome VARCHAR(50) NOT NULL,
+
+    CONSTRAINT PK_ROLE PRIMARY KEY (id)
+);
+
+CREATE TABLE stockway.PRODUTO (
+    id INT NOT NULL AUTO_INCREMENT,
+    categoria_id INT NOT NULL,
+    codigo_sku VARCHAR(30) NOT NULL,
+    nome VARCHAR(100) NOT NULL,
+    quantidade_atual INT NOT NULL,
+    estoque_minimo INT NOT NULL,
+    preco_unitario DECIMAL(10, 2) NOT NULL,
+
+    CONSTRAINT PK_PRODUTO PRIMARY KEY (id),
+    CONSTRAINT FK_PRODUTO_CATEGORIA
+        FOREIGN KEY (categoria_id)
+        REFERENCES CATEGORIA (id)
+);
+
+CREATE TABLE stockway.USUARIO (
+    id INT NOT NULL AUTO_INCREMENT,
+    role_id INT NOT NULL,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    senha_hash VARCHAR(255) NOT NULL,
+    ativo BOOLEAN NOT NULL,
+
+    CONSTRAINT PK_USUARIO PRIMARY KEY (id),
+    CONSTRAINT FK_USUARIO_ROLE
+        FOREIGN KEY (role_id)
+        REFERENCES ROLE (id)
+);
+
+CREATE TABLE stockway.MOVIMENTACAO_ESTOQUE (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    produto_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    tipo CHAR(1) NOT NULL,
+    quantidade INT NOT NULL,
+    data_registro TIMESTAMP NOT NULL,
+    motivo VARCHAR(100),
+
+    CONSTRAINT PK_MOVIMENTACAO_ESTOQUE PRIMARY KEY (id),
+    CONSTRAINT FK_MOVIMENTACAO_PRODUTO
+        FOREIGN KEY (produto_id)
+        REFERENCES PRODUTO (id),
+    CONSTRAINT FK_MOVIMENTACAO_USUARIO
+        FOREIGN KEY (usuario_id)
+        REFERENCES USUARIO (id)
+);
