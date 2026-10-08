@@ -4,34 +4,84 @@ namespace StrockWay.Models;
 
 /// <summary>
 /// MODEL Movimentacao: cada registro do histórico (log) do almoxarifado.
-/// Guarda código e nome do produto para o log continuar legível mesmo se o produto mudar.
+///
+/// É um registro de auditoria, por isso é imutável: só é criado pelo construtor e
+/// todos os setters são privados. Guarda código e nome do produto para o log
+/// continuar legível mesmo se o produto mudar depois.
 /// </summary>
 public class Movimentacao
 {
     public const int ResponsavelMin = 2;
     public const int ResponsavelMax = 60;
-    public const int ObservacaoMax = 200;
+    public const int ObservacaoMax = 200;          // texto digitado pelo usuário
     public const int ObservacaoMaxInterna = 500;   // descrições geradas pelo sistema (edições)
 
-    public long Id { get; set; }
-    public TipoMovimentacao Tipo { get; set; }
-    public int ProdutoId { get; set; }
-    public string ProdutoCodigo { get; set; } = string.Empty;
-    public string ProdutoNome { get; set; } = string.Empty;
+    private string _responsavel = string.Empty;
+    private string? _observacao;
+
+    /// <summary>Usado apenas pelo Entity Framework ao ler do banco.</summary>
+    private Movimentacao() { }
+
+    /// <summary>Cria o registro a partir do produto já atualizado (SaldoAtual = produto.Quantidade).</summary>
+    public Movimentacao(TipoMovimentacao tipo, Produto produto, int quantidade, int saldoAnterior,
+                        decimal valorUnitario, string responsavel, string? observacao)
+    {
+        Tipo = tipo;
+        ProdutoId = produto.Id;
+        ProdutoCodigo = produto.Codigo;
+        ProdutoNome = produto.Nome;
+        Quantidade = quantidade;
+        SaldoAnterior = saldoAnterior;
+        SaldoAtual = produto.Quantidade;
+        ValorUnitario = Math.Round(valorUnitario, 2);
+        ValorTotal = Math.Round(quantidade * valorUnitario, 2);
+        Responsavel = responsavel;
+        Observacao = observacao;
+        DataHora = Relogio.Agora;
+    }
+
+    public long Id { get; private set; }
+    public TipoMovimentacao Tipo { get; private set; }
+    public int ProdutoId { get; private set; }
+    public string ProdutoCodigo { get; private set; } = string.Empty;
+    public string ProdutoNome { get; private set; } = string.Empty;
 
     /// <summary>Quantidade movimentada. No AJUSTE pode ser negativa (perda/falta).</summary>
-    public int Quantidade { get; set; }
+    public int Quantidade { get; private set; }
 
-    public int SaldoAnterior { get; set; }
-    public int SaldoAtual { get; set; }
-    public decimal ValorUnitario { get; set; }
+    public int SaldoAnterior { get; private set; }
+    public int SaldoAtual { get; private set; }
+    public decimal ValorUnitario { get; private set; }
 
     /// <summary>Quantidade × valor unitário.</summary>
-    public decimal ValorTotal { get; set; }
+    public decimal ValorTotal { get; private set; }
 
-    public string Responsavel { get; set; } = string.Empty;
-    public string? Observacao { get; set; }
-    public DateTime DataHora { get; set; }
+    /// <summary>Quem fez a operação: de 2 a 60 caracteres.</summary>
+    public string Responsavel
+    {
+        get => _responsavel;
+        private set => _responsavel = ValidarResponsavel(value);
+    }
+
+    /// <summary>Observação/motivo. Textos do sistema maiores que 500 caracteres são cortados.</summary>
+    public string? Observacao
+    {
+        get => _observacao;
+        private set
+        {
+            var texto = value?.Trim();
+            if (string.IsNullOrEmpty(texto))
+            {
+                _observacao = null;
+                return;
+            }
+            if (texto.Any(char.IsControl))
+                throw RegraNegocioException.Validacao("a observação contém caracteres inválidos (tabulação ou quebra de linha)");
+            _observacao = texto.Length > ObservacaoMaxInterna ? texto[..ObservacaoMaxInterna] : texto;
+        }
+    }
+
+    public DateTime DataHora { get; private set; }
 
     public static string Descricao(TipoMovimentacao tipo) => tipo switch
     {
@@ -45,16 +95,8 @@ public class Movimentacao
     };
 
     // ------------------------------------------------------------------
-    // Verificações
+    // Verificações (também usadas pelo Service antes de alterar o produto)
     // ------------------------------------------------------------------
-
-    public static void ValidarQuantidade(int quantidade)
-    {
-        if (quantidade <= 0)
-            throw RegraNegocioException.Validacao("a quantidade da movimentação deve ser maior que zero");
-        if (quantidade > Produto.QuantidadeLimite)
-            throw RegraNegocioException.Validacao($"a quantidade excede o limite de {Produto.QuantidadeLimite} unidades");
-    }
 
     /// <summary>Valida e devolve o nome do responsável sem espaços nas pontas.</summary>
     public static string ValidarResponsavel(string? responsavel)
@@ -70,7 +112,7 @@ public class Movimentacao
         return valor;
     }
 
-    /// <summary>Valida e devolve a observação sem espaços nas pontas (null se vazia).</summary>
+    /// <summary>Valida a observação digitada pelo usuário (até 200 caracteres). Devolve null se vazia.</summary>
     public static string? ValidarObservacao(string? observacao, bool obrigatoria)
     {
         var valor = (observacao ?? string.Empty).Trim();

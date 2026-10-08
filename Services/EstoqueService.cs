@@ -7,25 +7,13 @@ using StrockWay.Models;
 namespace StrockWay.Services;
 
 /// <summary>
-/// Regras de negócio do almoxarifado: cadastro, entradas, saídas, ajustes e histórico.
-/// Toda alteração gera um registro em Movimentacoes (log).
+/// Orquestra as operações do almoxarifado: busca o produto, chama os métodos do Model
+/// (que fazem as verificações), grava no banco e registra cada alteração no log.
 /// </summary>
 public class EstoqueService(StrockWayContext db)
 {
     // Uma operação de escrita por vez: evita que duas saídas simultâneas usem o mesmo saldo.
     private static readonly SemaphoreSlim Trava = new(1, 1);
-
-    public static DateOnly Hoje => DateOnly.FromDateTime(DateTime.Now);
-
-    /// <summary>Data/hora atual sem frações de segundo.</summary>
-    public static DateTime Agora
-    {
-        get
-        {
-            var agora = DateTime.Now;
-            return new DateTime(agora.Ticks - agora.Ticks % TimeSpan.TicksPerSecond, agora.Kind);
-        }
-    }
 
     // ==================================================================
     // Consultas
@@ -44,7 +32,7 @@ public class EstoqueService(StrockWayContext db)
 
         // Os filtros abaixo usam campos calculados, por isso são aplicados em memória.
         IEnumerable<Produto> lista = await consulta.ToListAsync();
-        var hoje = Hoje;
+        var hoje = Relogio.Hoje;
 
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
         {
@@ -133,26 +121,19 @@ public class EstoqueService(StrockWayContext db)
         try
         {
             var responsavel = Movimentacao.ValidarResponsavel(dados.Responsavel);
-            var produto = new Produto
-            {
-                Codigo = dados.Codigo ?? string.Empty,
-                Nome = dados.Nome ?? string.Empty,
-                Quantidade = dados.Quantidade ?? 0,
-                ValorUnitario = dados.ValorUnitario ?? 0,
-                PesoKg = dados.PesoKg ?? 0,
-                Validade = dados.Validade,
-                Corredor = dados.Endereco?.Corredor ?? string.Empty,
-                Prateleira = dados.Endereco?.Prateleira ?? string.Empty,
-                EstoqueMinimo = dados.EstoqueMinimo ?? 0,
-                EstoqueMaximo = dados.EstoqueMaximo ?? 0
-            };
-            produto.Normalizar();
-            produto.Validar();
-            produto.ValidarValidadeNaoVencida(Hoje);
 
-            if (produto.Quantidade > produto.EstoqueMaximo)
-                throw RegraNegocioException.Validacao(
-                    $"a quantidade inicial ({produto.Quantidade}) excede o estoque máximo ({produto.EstoqueMaximo})");
+            // O construtor e os setters do Model fazem todas as verificações.
+            var produto = new Produto(
+                dados.Codigo ?? string.Empty,
+                dados.Nome ?? string.Empty,
+                dados.ValorUnitario ?? 0,
+                dados.PesoKg ?? 0,
+                dados.Endereco?.Corredor ?? string.Empty,
+                dados.Endereco?.Prateleira ?? string.Empty,
+                dados.EstoqueMinimo ?? 0,
+                dados.EstoqueMaximo ?? 0,
+                dados.Quantidade ?? 0,
+                dados.Validade);
 
             var existente = await db.Produtos.AsNoTracking().FirstOrDefaultAsync(p => p.Codigo == produto.Codigo);
             if (existente is not null)
@@ -160,12 +141,12 @@ public class EstoqueService(StrockWayContext db)
                     ? $"já existe um produto cadastrado com o código '{produto.Codigo}'"
                     : $"o código '{produto.Codigo}' pertence a um produto removido e não pode ser reutilizado");
 
-            produto.CriadoEm = produto.AtualizadoEm = Agora;
+            produto.CriadoEm = produto.AtualizadoEm = Relogio.Agora;
 
             await using var transacao = await db.Database.BeginTransactionAsync();
             db.Produtos.Add(produto);
             await db.SaveChangesAsync();                  // gera o Id do produto
-            db.Movimentacoes.Add(NovaMovimentacao(TipoMovimentacao.Cadastro, produto, produto.Quantidade, 0,
+            db.Movimentacoes.Add(new Movimentacao(TipoMovimentacao.Cadastro, produto, produto.Quantidade, 0,
                 produto.ValorUnitario, responsavel,
                 $"Produto cadastrado com saldo inicial de {produto.Quantidade} unidade(s) em {produto.EnderecoDescricao}"));
             await db.SaveChangesAsync();
@@ -200,6 +181,7 @@ public class EstoqueService(StrockWayContext db)
                 produto.Corredor, produto.Prateleira, produto.EstoqueMinimo, produto.EstoqueMaximo
             };
 
+            // Cada setter valida o próprio valor. Se algum falhar, nada é gravado.
             if (dados.Nome is not null) produto.Nome = dados.Nome;
             if (dados.ValorUnitario is decimal valor) produto.ValorUnitario = valor;
             if (dados.PesoKg is decimal peso) produto.PesoKg = peso;
@@ -207,13 +189,9 @@ public class EstoqueService(StrockWayContext db)
             else if (dados.Validade is DateOnly validade) produto.Validade = validade;
             if (dados.Endereco?.Corredor is not null) produto.Corredor = dados.Endereco.Corredor;
             if (dados.Endereco?.Prateleira is not null) produto.Prateleira = dados.Endereco.Prateleira;
-            if (dados.EstoqueMinimo is int minimo) produto.EstoqueMinimo = minimo;
-            if (dados.EstoqueMaximo is int maximo) produto.EstoqueMaximo = maximo;
-
-            produto.Normalizar();
-            produto.Validar();
-            if (produto.Validade != antes.Validade)
-                produto.ValidarValidadeNaoVencida(Hoje);
+            if (dados.EstoqueMinimo is not null || dados.EstoqueMaximo is not null)
+                produto.DefinirLimites(dados.EstoqueMinimo ?? produto.EstoqueMinimo,
+                                       dados.EstoqueMaximo ?? produto.EstoqueMaximo);
 
             var mudancas = new List<string>();
             if (produto.Nome != antes.Nome)
@@ -238,8 +216,8 @@ public class EstoqueService(StrockWayContext db)
             if (produto.Quantidade > produto.EstoqueMaximo)
                 descricao += " (atenção: saldo atual acima do novo máximo)";
 
-            produto.AtualizadoEm = Agora;
-            db.Movimentacoes.Add(NovaMovimentacao(TipoMovimentacao.Edicao, produto, 0, produto.Quantidade,
+            produto.AtualizadoEm = Relogio.Agora;
+            db.Movimentacoes.Add(new Movimentacao(TipoMovimentacao.Edicao, produto, 0, produto.Quantidade,
                 produto.ValorUnitario, responsavel, descricao));
             await db.SaveChangesAsync();
             return produto;
@@ -260,14 +238,9 @@ public class EstoqueService(StrockWayContext db)
             var resp = Movimentacao.ValidarResponsavel(responsavel);
             var obs = Movimentacao.ValidarObservacao(motivo, obrigatoria: false);
 
-            if (produto.Quantidade > 0)
-                throw RegraNegocioException.Conflito(
-                    $"não é possível remover '{produto.Codigo}': ainda há {produto.Quantidade} unidade(s) em estoque. " +
-                    "Registre a saída ou um ajuste antes de remover");
-
-            produto.Ativo = false;
-            produto.AtualizadoEm = Agora;
-            db.Movimentacoes.Add(NovaMovimentacao(TipoMovimentacao.Remocao, produto, 0, 0, produto.ValorUnitario,
+            produto.Desativar();
+            produto.AtualizadoEm = Relogio.Agora;
+            db.Movimentacoes.Add(new Movimentacao(TipoMovimentacao.Remocao, produto, 0, 0, produto.ValorUnitario,
                 resp, obs ?? "Produto removido do cadastro"));
             await db.SaveChangesAsync();
         }
@@ -287,32 +260,16 @@ public class EstoqueService(StrockWayContext db)
         try
         {
             var produto = await ObterProdutoAsync(dados.Codigo ?? string.Empty);
-            var quantidade = dados.Quantidade ?? 0;
-            Movimentacao.ValidarQuantidade(quantidade);
             var responsavel = Movimentacao.ValidarResponsavel(dados.Responsavel);
             var observacao = Movimentacao.ValidarObservacao(dados.Observacao, obrigatoria: false);
-            if (dados.ValorUnitario is decimal custo) Produto.ValidarValorUnitario(custo);
-
-            if ((long)produto.Quantidade + quantidade > produto.EstoqueMaximo)
-            {
-                var disponivel = Math.Max(0, produto.EstoqueMaximo - produto.Quantidade);
-                throw RegraNegocioException.Regra(
-                    $"a entrada de {quantidade} unidade(s) ultrapassa o estoque máximo de '{produto.Codigo}' " +
-                    $"(saldo atual {produto.Quantidade}, máximo {produto.EstoqueMaximo}, capacidade disponível {disponivel})");
-            }
-
+            var quantidade = dados.Quantidade ?? 0;
             var saldoAnterior = produto.Quantidade;
             var custoEntrada = dados.ValorUnitario ?? produto.ValorUnitario;
 
-            // Custo médio ponderado: o valor em estoque fica coerente com o que foi pago.
-            if (dados.ValorUnitario is decimal novoCusto)
-                produto.ValorUnitario = Math.Round(
-                    (saldoAnterior * produto.ValorUnitario + quantidade * novoCusto) / (saldoAnterior + quantidade), 2);
+            produto.RegistrarEntrada(quantidade, dados.ValorUnitario);
+            produto.AtualizadoEm = Relogio.Agora;
 
-            produto.Quantidade += quantidade;
-            produto.AtualizadoEm = Agora;
-
-            var mov = NovaMovimentacao(TipoMovimentacao.Entrada, produto, quantidade, saldoAnterior,
+            var mov = new Movimentacao(TipoMovimentacao.Entrada, produto, quantidade, saldoAnterior,
                 custoEntrada, responsavel, observacao);
             db.Movimentacoes.Add(mov);
             await db.SaveChangesAsync();
@@ -330,20 +287,15 @@ public class EstoqueService(StrockWayContext db)
         try
         {
             var produto = await ObterProdutoAsync(dados.Codigo ?? string.Empty);
-            var quantidade = dados.Quantidade ?? 0;
-            Movimentacao.ValidarQuantidade(quantidade);
             var responsavel = Movimentacao.ValidarResponsavel(dados.Responsavel);
             var observacao = Movimentacao.ValidarObservacao(dados.Observacao, obrigatoria: false);
-
-            if (quantidade > produto.Quantidade)
-                throw RegraNegocioException.Regra(
-                    $"estoque insuficiente para '{produto.Codigo}': solicitado {quantidade}, disponível {produto.Quantidade}");
-
+            var quantidade = dados.Quantidade ?? 0;
             var saldoAnterior = produto.Quantidade;
-            produto.Quantidade -= quantidade;
-            produto.AtualizadoEm = Agora;
 
-            var mov = NovaMovimentacao(TipoMovimentacao.Saida, produto, quantidade, saldoAnterior,
+            produto.RegistrarSaida(quantidade);
+            produto.AtualizadoEm = Relogio.Agora;
+
+            var mov = new Movimentacao(TipoMovimentacao.Saida, produto, quantidade, saldoAnterior,
                 produto.ValorUnitario, responsavel, observacao);
             db.Movimentacoes.Add(mov);
             await db.SaveChangesAsync();
@@ -362,25 +314,16 @@ public class EstoqueService(StrockWayContext db)
         try
         {
             var produto = await ObterProdutoAsync(dados.Codigo ?? string.Empty);
-            var contada = dados.QuantidadeContada ?? -1;
-            if (contada < 0)
-                throw RegraNegocioException.Validacao("a quantidade contada não pode ser negativa");
-            if (contada > Produto.QuantidadeLimite)
-                throw RegraNegocioException.Validacao($"a quantidade excede o limite de {Produto.QuantidadeLimite} unidades");
             var responsavel = Movimentacao.ValidarResponsavel(dados.Responsavel);
             var motivo = Movimentacao.ValidarObservacao(dados.Observacao, obrigatoria: true);
-
-            if (contada == produto.Quantidade)
-                throw RegraNegocioException.Validacao(
-                    $"a quantidade contada é igual ao saldo atual ({produto.Quantidade}); nenhum ajuste é necessário");
-
             var saldoAnterior = produto.Quantidade;
-            produto.Quantidade = contada;
-            produto.AtualizadoEm = Agora;
+
+            produto.AjustarPara(dados.QuantidadeContada ?? -1);
+            produto.AtualizadoEm = Relogio.Agora;
 
             // quantidade com sinal: positiva = sobra, negativa = perda/falta
-            var mov = NovaMovimentacao(TipoMovimentacao.Ajuste, produto, contada - saldoAnterior, saldoAnterior,
-                produto.ValorUnitario, responsavel, motivo);
+            var mov = new Movimentacao(TipoMovimentacao.Ajuste, produto, produto.Quantidade - saldoAnterior,
+                saldoAnterior, produto.ValorUnitario, responsavel, motivo);
             db.Movimentacoes.Add(mov);
             await db.SaveChangesAsync();
             return (mov, produto);
@@ -389,33 +332,6 @@ public class EstoqueService(StrockWayContext db)
         {
             Trava.Release();
         }
-    }
-
-    // ==================================================================
-    // Auxiliares
-    // ==================================================================
-
-    private static Movimentacao NovaMovimentacao(TipoMovimentacao tipo, Produto produto, int quantidade,
-        int saldoAnterior, decimal valorUnitario, string responsavel, string? observacao)
-    {
-        if (observacao is { Length: > Movimentacao.ObservacaoMaxInterna })
-            observacao = observacao[..Movimentacao.ObservacaoMaxInterna];
-
-        return new Movimentacao
-        {
-            Tipo = tipo,
-            ProdutoId = produto.Id,
-            ProdutoCodigo = produto.Codigo,
-            ProdutoNome = produto.Nome,
-            Quantidade = quantidade,
-            SaldoAnterior = saldoAnterior,
-            SaldoAtual = produto.Quantidade,
-            ValorUnitario = Math.Round(valorUnitario, 2),
-            ValorTotal = Math.Round(quantidade * valorUnitario, 2),
-            Responsavel = responsavel,
-            Observacao = observacao,
-            DataHora = Agora
-        };
     }
 
     private static string TextoValidade(DateOnly? validade) =>

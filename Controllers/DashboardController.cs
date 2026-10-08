@@ -24,5 +24,5 @@ public class DashboardController(DashboardService dashboard, StrockWayContext db
             "ok",
             await db.Produtos.CountAsync(),
             await db.Movimentacoes.CountAsync(),
-            EstoqueService.Agora)));
+            Relogio.Agora)));
 }

@@ -32,6 +32,19 @@
 
 **Campos calculados na resposta:** `status` (`ZERADO`, `BAIXO`, `NORMAL`, `ACIMA_MAXIMO`), `baixo_estoque`, `quantidade_para_repor`, `percentual_ocupacao`, `status_validade` (`NAO_PERECIVEL`, `OK`, `VENCE_EM_BREVE` (até 30 dias), `VENCIDO`) e `dias_para_vencer`.
 
+### Onde ficam as verificações
+
+As verificações ficam **dentro dos Models**, de modo que um `Produto` nunca existe em estado inválido:
+
+- **Regras de um único atributo ficam no setter.** Exemplos: limite de caracteres do nome, peso entre 0 e 50.000 kg, formato do código e do endereço, validade não vencida. Qualquer atribuição como `produto.PesoKg = -1` lança `RegraNegocioException`, e a API devolve 400 com a mensagem.
+- **Regras que envolvem mais de um atributo ficam em métodos.**
+  - `DefinirLimites(minimo, maximo)`: o mínimo precisa ser menor que o máximo. Com dois setters separados, a ordem das atribuições poderia gerar um erro falso.
+  - `RegistrarEntrada`, `RegistrarSaida`, `AjustarPara` e `Desativar`.
+  - Por isso `Quantidade`, `EstoqueMinimo`, `EstoqueMaximo`, `Codigo` e `Ativo` têm **setter privado**: só mudam por esses métodos.
+- **O construtor** `new Produto(...)` exige todos os dados obrigatórios e passa por todos os setters.
+- **Ao ler do banco**, o Entity Framework usa o construtor privado e grava direto nos campos privados (`_nome`, `_pesoKg`...). Assim, as verificações não rodam de novo e não bloqueiam a leitura de dados antigos.
+- **`Movimentacao` é imutável**, porque é um registro de auditoria. Ela só é criada pelo construtor, e todos os setters são privados.
+
 ---
 
 ## 2. Estrutura MVC
@@ -60,6 +73,8 @@ StrockWay/
 │   ├── MovimentacoesController.cs
 │   ├── EstoqueController.cs      #   baixo estoque, alertas, validade
 │   └── DashboardController.cs
+├── Common/
+│   └── Relogio.cs                # data/hora do sistema (usado por Models e Services)
 ├── Middleware/                   # tratamento de erros e mensagens de validação em português
 ├── Exceptions/
 │   └── RegraNegocioException.cs

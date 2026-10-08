@@ -35,7 +35,7 @@ public class ProdutosController(EstoqueService servico) : ControllerBase
             ordenar, incluirInativos);
 
         var produtos = await servico.ListarProdutosAsync(filtro);
-        var hoje = EstoqueService.Hoje;
+        var hoje = Relogio.Hoje;
 
         return Ok(RespostaApi.Ok(new ListaProdutosResponse(
             produtos.Count,
@@ -52,7 +52,7 @@ public class ProdutosController(EstoqueService servico) : ControllerBase
         var ultimas = await servico.UltimasMovimentacoesAsync(produto.Codigo, 10);
 
         return Ok(RespostaApi.Ok(new ProdutoDetalheResponse(
-            ProdutoResponse.De(produto, EstoqueService.Hoje),
+            ProdutoResponse.De(produto, Relogio.Hoje),
             ultimas.Select(MovimentacaoResponse.De).ToList())));
     }
 
@@ -62,7 +62,7 @@ public class ProdutosController(EstoqueService servico) : ControllerBase
     {
         var produto = await servico.CadastrarAsync(dados);
         return StatusCode(StatusCodes.Status201Created,
-            RespostaApi.Ok(ProdutoResponse.De(produto, EstoqueService.Hoje)));
+            RespostaApi.Ok(ProdutoResponse.De(produto, Relogio.Hoje)));
     }
 
     /// <summary>Altera dados cadastrais (envie só os campos que mudaram). A quantidade não é alterada aqui.</summary>
@@ -71,7 +71,7 @@ public class ProdutosController(EstoqueService servico) : ControllerBase
         [FromBody] ProdutoAtualizarRequest dados)
     {
         var produto = await servico.AtualizarAsync(codigo, dados);
-        return Ok(RespostaApi.Ok(ProdutoResponse.De(produto, EstoqueService.Hoje)));
+        return Ok(RespostaApi.Ok(ProdutoResponse.De(produto, Relogio.Hoje)));
     }
 
     /// <summary>Remove o produto (exclusão lógica; só com saldo zero).</summary>

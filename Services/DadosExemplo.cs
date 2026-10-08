@@ -16,7 +16,7 @@ public static class DadosExemplo
         }
 
         const string sistema = "Sistema (dados de exemplo)";
-        var hoje = EstoqueService.Hoje;
+        var hoje = Relogio.Hoje;
 
         var exemplos = new[]
         {

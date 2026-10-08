@@ -15,7 +15,7 @@ public class DashboardService(StrockWayContext db)
 
     public async Task<DashboardResponse> GerarAsync()
     {
-        var hoje = EstoqueService.Hoje;
+        var hoje = Relogio.Hoje;
         var produtos = await db.Produtos.AsNoTracking().Where(p => p.Ativo).ToListAsync();
 
         // ---- Resumo ----
@@ -85,7 +85,7 @@ public class DashboardService(StrockWayContext db)
             .ToListAsync();
 
         return new DashboardResponse(
-            EstoqueService.Agora, resumo, porStatus, movimentacoesHoje, semana,
+            Relogio.Agora, resumo, porStatus, movimentacoesHoje, semana,
             baixo, acima, validade, maiores, corredores,
             ultimas.Select(MovimentacaoResponse.De).ToList());
     }

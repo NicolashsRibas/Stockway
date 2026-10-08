@@ -41,7 +41,8 @@ public class ProdutoCriarRequest
     /// <summary>AAAA-MM-DD. Omita para produto não perecível.</summary>
     public DateOnly? Validade { get; set; }
 
-    [Required(ErrorMessage = "o campo 'endereco' é obrigatório: { \"corredor\": \"A\", \"prateleira\": \"01\" }")]
+    // As chaves são dobradas ({{ }}) porque o ASP.NET passa ErrorMessage pelo string.Format.
+    [Required(ErrorMessage = "o campo 'endereco' é obrigatório: {{ \"corredor\": \"A\", \"prateleira\": \"01\" }}")]
     public EnderecoRequest? Endereco { get; set; }
 
     [Required(ErrorMessage = "o campo 'estoque_minimo' é obrigatório")]

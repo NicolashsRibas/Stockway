@@ -16,7 +16,7 @@ public class EstoqueController(EstoqueService servico) : ControllerBase
     [HttpGet("baixo")]
     public async Task<ActionResult<RespostaApi<BaixoEstoqueResponse>>> Baixo()
     {
-        var hoje = EstoqueService.Hoje;
+        var hoje = Relogio.Hoje;
         var produtos = await ListarAtivosAsync();
         var baixos = EstoqueService.OrdenarPorUrgencia(produtos.Where(p => p.PrecisaReposicao)).ToList();
 
@@ -30,7 +30,7 @@ public class EstoqueController(EstoqueService servico) : ControllerBase
     [HttpGet("alertas")]
     public async Task<ActionResult<RespostaApi<AlertasResponse>>> Alertas()
     {
-        var hoje = EstoqueService.Hoje;
+        var hoje = Relogio.Hoje;
         var produtos = await ListarAtivosAsync();
 
         List<ProdutoResponse> Converter(IEnumerable<Produto> lista) =>
@@ -52,7 +52,7 @@ public class EstoqueController(EstoqueService servico) : ControllerBase
         if (dias < 0 || dias > 3650)
             throw RegraNegocioException.Validacao("parâmetro 'dias' deve ser um inteiro entre 0 e 3650");
 
-        var hoje = EstoqueService.Hoje;
+        var hoje = Relogio.Hoje;
         var produtos = (await ListarAtivosAsync())
             .Where(p => p.DiasParaVencer(hoje) is int restante && restante <= dias)
             .OrderBy(p => p.Validade)

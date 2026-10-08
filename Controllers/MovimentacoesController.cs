@@ -76,7 +76,7 @@ public class MovimentacoesController(EstoqueService servico) : ControllerBase
 
     private ObjectResult Criado(Movimentacao mov, Produto produto)
     {
-        var hoje = EstoqueService.Hoje;
+        var hoje = Relogio.Hoje;
         var alertas = new List<string>();
 
         switch (produto.Status)
