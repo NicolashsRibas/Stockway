@@ -1,6 +1,6 @@
-# StrockWay — Back-end em C# (ASP.NET Core Web API)
+# StockWay — Back-end em C# (ASP.NET Core Web API)
 
-**StrockWay** é o back-end de um site de gerenciamento de estoque (almoxarifado), feito em **C# com ASP.NET Core 8**, **Entity Framework Core** e **SQLite**, organizado no padrão **MVC**.
+**StockWay** é o back-end de um site de gerenciamento de estoque (almoxarifado), feito em **C# com ASP.NET Core 8**, **Entity Framework Core** e **SQLite**, organizado no padrão **MVC**.
 
 **Funcionalidades**
 
