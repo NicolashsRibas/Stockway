@@ -14,9 +14,17 @@ using StrockWay.Services;
 var carregarExemplos = args.Contains("--exemplo");
 var builder = WebApplication.CreateBuilder(args.Where(a => a != "--exemplo").ToArray());
 
-// ---- Model: banco SQLite via Entity Framework ----
+// ---- Model: banco MySQL via Entity Framework ----
+var connectionString = builder.Configuration.GetConnectionString("StrockWay")
+    ?? throw new InvalidOperationException(
+        "A string de conexão não foi configurada. Defina ConnectionStrings__StrockWay.");
+
 builder.Services.AddDbContext<StrockWayContext>(opcoes =>
-    opcoes.UseSqlite(builder.Configuration.GetConnectionString("StrockWay") ?? "Data Source=strockway.db"));
+    opcoes.UseMySql(
+        connectionString,
+        new MySqlServerVersion(new Version(8, 0, 0)),
+        mysql => mysql.EnableRetryOnFailure())
+    .UseSnakeCaseNamingConvention());
 
 // ---- Services: regras de negócio ----
 builder.Services.AddScoped<EstoqueService>();
@@ -56,7 +64,7 @@ builder.Services.AddSwaggerGen(opcoes =>
 
 var app = builder.Build();
 
-// Cria o banco na primeira execução e, se pedido, carrega dados de exemplo.
+// Cria o banco e as tabelas na primeira execução e, se pedido, carrega dados de exemplo.
 using (var escopo = app.Services.CreateScope())
 {
     var db = escopo.ServiceProvider.GetRequiredService<StrockWayContext>();

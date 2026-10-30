@@ -143,14 +143,20 @@ public class EstoqueService(StrockWayContext db)
 
             produto.CriadoEm = produto.AtualizadoEm = Relogio.Agora;
 
-            await using var transacao = await db.Database.BeginTransactionAsync();
-            db.Produtos.Add(produto);
-            await db.SaveChangesAsync();                  // gera o Id do produto
-            db.Movimentacoes.Add(new Movimentacao(TipoMovimentacao.Cadastro, produto, produto.Quantidade, 0,
-                produto.ValorUnitario, responsavel,
-                $"Produto cadastrado com saldo inicial de {produto.Quantidade} unidade(s) em {produto.EnderecoDescricao}"));
-            await db.SaveChangesAsync();
-            await transacao.CommitAsync();
+            // A transação precisa ser executada pela estratégia de retry do MySQL.
+            // Caso contrário, o EF Core rejeita uma transação iniciada manualmente.
+            var estrategia = db.Database.CreateExecutionStrategy();
+            await estrategia.ExecuteAsync(async () =>
+            {
+                await using var transacao = await db.Database.BeginTransactionAsync();
+                db.Produtos.Add(produto);
+                await db.SaveChangesAsync();              // gera o Id do produto
+                db.Movimentacoes.Add(new Movimentacao(TipoMovimentacao.Cadastro, produto, produto.Quantidade, 0,
+                    produto.ValorUnitario, responsavel,
+                    $"Produto cadastrado com saldo inicial de {produto.Quantidade} unidade(s) em {produto.EnderecoDescricao}"));
+                await db.SaveChangesAsync();
+                await transacao.CommitAsync();
+            });
             return produto;
         }
         finally

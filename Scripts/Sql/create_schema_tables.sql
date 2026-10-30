@@ -1,62 +1,47 @@
-create schema if not exists stockway;
+CREATE DATABASE IF NOT EXISTS stockway
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE stockway.CATEGORIA (
+USE stockway;
+
+CREATE TABLE IF NOT EXISTS produtos (
     id INT NOT NULL AUTO_INCREMENT,
-    nome VARCHAR(50) NOT NULL,
-
-    CONSTRAINT PK_CATEGORIA PRIMARY KEY (id)
-);
-
-CREATE TABLE stockway.ROLE (
-    id INT NOT NULL AUTO_INCREMENT,
-    nome VARCHAR(50) NOT NULL,
-
-    CONSTRAINT PK_ROLE PRIMARY KEY (id)
-);
-
-CREATE TABLE stockway.PRODUTO (
-    id INT NOT NULL AUTO_INCREMENT,
-    categoria_id INT NOT NULL,
-    codigo_sku VARCHAR(30) NOT NULL,
+    codigo VARCHAR(30) NOT NULL,
     nome VARCHAR(100) NOT NULL,
-    quantidade_atual INT NOT NULL,
-    estoque_minimo INT NOT NULL,
-    preco_unitario DECIMAL(10, 2) NOT NULL,
-
-    CONSTRAINT PK_PRODUTO PRIMARY KEY (id),
-    CONSTRAINT FK_PRODUTO_CATEGORIA
-        FOREIGN KEY (categoria_id)
-        REFERENCES CATEGORIA (id)
-);
-
-CREATE TABLE stockway.USUARIO (
-    id INT NOT NULL AUTO_INCREMENT,
-    role_id INT NOT NULL,
-    nome VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL,
-    senha_hash VARCHAR(255) NOT NULL,
-    ativo BOOLEAN NOT NULL,
-
-    CONSTRAINT PK_USUARIO PRIMARY KEY (id),
-    CONSTRAINT FK_USUARIO_ROLE
-        FOREIGN KEY (role_id)
-        REFERENCES ROLE (id)
-);
-
-CREATE TABLE stockway.MOVIMENTACAO_ESTOQUE (
-    id BIGINT NOT NULL AUTO_INCREMENT,
-    produto_id INT NOT NULL,
-    usuario_id INT NOT NULL,
-    tipo CHAR(1) NOT NULL,
     quantidade INT NOT NULL,
-    data_registro TIMESTAMP NOT NULL,
-    motivo VARCHAR(100),
+    valor_unitario DECIMAL(18, 2) NOT NULL,
+    peso_kg DECIMAL(18, 3) NOT NULL,
+    validade DATE NULL,
+    corredor VARCHAR(10) NOT NULL,
+    prateleira VARCHAR(10) NOT NULL,
+    estoque_minimo INT NOT NULL,
+    estoque_maximo INT NOT NULL,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em DATETIME(6) NOT NULL,
+    atualizado_em DATETIME(6) NOT NULL,
 
-    CONSTRAINT PK_MOVIMENTACAO_ESTOQUE PRIMARY KEY (id),
-    CONSTRAINT FK_MOVIMENTACAO_PRODUTO
-        FOREIGN KEY (produto_id)
-        REFERENCES PRODUTO (id),
-    CONSTRAINT FK_MOVIMENTACAO_USUARIO
-        FOREIGN KEY (usuario_id)
-        REFERENCES USUARIO (id)
-);
+    CONSTRAINT pk_produtos PRIMARY KEY (id),
+    CONSTRAINT uq_produtos_codigo UNIQUE (codigo)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS movimentacoes (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    tipo VARCHAR(20) NOT NULL,
+    produto_id INT NOT NULL,
+    produto_codigo VARCHAR(30) NOT NULL,
+    produto_nome VARCHAR(100) NOT NULL,
+    quantidade INT NOT NULL,
+    saldo_anterior INT NOT NULL,
+    saldo_atual INT NOT NULL,
+    valor_unitario DECIMAL(18, 2) NOT NULL,
+    valor_total DECIMAL(18, 2) NOT NULL,
+    responsavel VARCHAR(60) NOT NULL,
+    observacao VARCHAR(500) NULL,
+    data_hora DATETIME(6) NOT NULL,
+
+    CONSTRAINT pk_movimentacoes PRIMARY KEY (id),
+    CONSTRAINT fk_movimentacoes_produtos
+        FOREIGN KEY (produto_id) REFERENCES produtos (id),
+    INDEX ix_movimentacoes_produto_codigo (produto_codigo),
+    INDEX ix_movimentacoes_data_hora (data_hora)
+) ENGINE = InnoDB;
