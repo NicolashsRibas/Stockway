@@ -3,7 +3,7 @@ using StrockWay.Models;
 
 namespace StrockWay.Data;
 
-/// <summary>Acesso ao banco SQLite (arquivo strockway.db) via Entity Framework Core.</summary>
+/// <summary>Acesso ao banco MySQL via Entity Framework Core.</summary>
 public class StrockWayContext(DbContextOptions<StrockWayContext> options) : DbContext(options)
 {
     public DbSet<Produto> Produtos => Set<Produto>();
@@ -11,6 +11,9 @@ public class StrockWayContext(DbContextOptions<StrockWayContext> options) : DbCo
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.UseCollation("utf8mb4_unicode_ci");
+        modelBuilder.HasCharSet("utf8mb4");
+
         modelBuilder.Entity<Produto>(e =>
         {
             e.ToTable("produtos");
@@ -19,6 +22,8 @@ public class StrockWayContext(DbContextOptions<StrockWayContext> options) : DbCo
             e.Property(p => p.Nome).HasMaxLength(Produto.NomeMax).IsRequired();
             e.Property(p => p.Corredor).HasMaxLength(Produto.EnderecoMax).IsRequired();
             e.Property(p => p.Prateleira).HasMaxLength(Produto.EnderecoMax).IsRequired();
+            e.Property(p => p.ValorUnitario).HasPrecision(18, 2);
+            e.Property(p => p.PesoKg).HasPrecision(18, 3);
         });
 
         modelBuilder.Entity<Movimentacao>(e =>
@@ -29,6 +34,12 @@ public class StrockWayContext(DbContextOptions<StrockWayContext> options) : DbCo
             e.Property(m => m.ProdutoNome).HasMaxLength(Produto.NomeMax).IsRequired();
             e.Property(m => m.Responsavel).HasMaxLength(Movimentacao.ResponsavelMax).IsRequired();
             e.Property(m => m.Observacao).HasMaxLength(Movimentacao.ObservacaoMaxInterna);
+            e.Property(m => m.ValorUnitario).HasPrecision(18, 2);
+            e.Property(m => m.ValorTotal).HasPrecision(18, 2);
+            e.HasOne<Produto>()
+                .WithMany()
+                .HasForeignKey(m => m.ProdutoId)
+                .OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(m => m.ProdutoCodigo);
             e.HasIndex(m => m.DataHora);
         });

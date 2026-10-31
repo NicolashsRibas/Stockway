@@ -1,6 +1,6 @@
 # StockWay — Back-end em C# (ASP.NET Core Web API)
 
-**StockWay** é o back-end de um site de gerenciamento de estoque (almoxarifado), feito em **C# com ASP.NET Core 8**, **Entity Framework Core** e **SQLite**, organizado no padrão **MVC**.
+**StockWay** é o back-end de um site de gerenciamento de estoque (almoxarifado), feito em **C# com ASP.NET Core 8**, **Entity Framework Core** e **MySQL**, organizado no padrão **MVC**.
 
 **Funcionalidades**
 
@@ -53,13 +53,13 @@ As verificações ficam **dentro dos Models**, de modo que um `Produto` nunca ex
 StrockWay/
 ├── Program.cs                    # configuração: banco, JSON, CORS, Swagger, rotas
 ├── StrockWay.csproj
-├── appsettings.json              # porta (8080) e caminho do banco
+├── appsettings.json              # porta (8080) e conexão padrão com o banco
 ├── Models/                       # MODEL: classes com atributos, campos calculados e verificações
 │   ├── Produto.cs
 │   ├── Movimentacao.cs           #   registro do log
 │   └── Enums.cs                  #   StatusEstoque, StatusValidade, TipoMovimentacao
 ├── Data/
-│   └── StrockWayContext.cs       # Entity Framework (banco SQLite strockway.db)
+│   └── StrockWayContext.cs       # Entity Framework (banco MySQL stockway)
 ├── Services/                     # regras de negócio
 │   ├── EstoqueService.cs         #   cadastro, entradas, saídas, ajustes, log
 │   ├── DashboardService.cs       #   indicadores da dashboard
@@ -86,7 +86,7 @@ StrockWay/
 **Fluxo de uma requisição:**
 
 ```
-Site ──HTTP──▶ Controller ──▶ Service (regras) ──▶ Model + banco (EF Core / SQLite)
+Site ──HTTP──▶ Controller ──▶ Service (regras) ──▶ Model + banco (EF Core / MySQL)
                    │
 Site ◀──JSON── DTO (View) ◀─┘
 ```
@@ -103,14 +103,25 @@ Numa API, a "View" do MVC não é uma página HTML, e sim o JSON devolvido. Esse
    ```
    Depois feche e abra o VS Code de novo.
 2. No VS Code, instale a extensão **C# Dev Kit**. O próprio VS Code sugere as extensões recomendadas.
-3. No terminal, dentro da pasta do projeto:
+3. Instale o **MySQL Server 8** (ou MariaDB compatível) e deixe o serviço rodando na porta `3306`.
+4. Configure a conexão. A configuração padrão espera MySQL local com usuário `root` sem senha:
+   ```text
+   Server=localhost;Port=3306;Database=stockway;User=root;Password=;
+   ```
+   Se sua instalação tiver senha ou outro usuário, defina a variável de ambiente
+   `ConnectionStrings__StrockWay` antes de iniciar. No PowerShell:
+   ```powershell
+   $env:ConnectionStrings__StrockWay="Server=localhost;Port=3306;Database=stockway;User=stockway_app;Password=sua_senha;"
+   ```
+   O arquivo [`Scripts/Sql/create_schema_tables.sql`](Scripts/Sql/create_schema_tables.sql) também pode ser executado no MySQL Workbench. A aplicação cria o banco e as tabelas automaticamente na primeira execução, portanto executar o script manualmente é opcional.
+5. No terminal, dentro da pasta do projeto:
    ```bash
    dotnet run -- --exemplo
    ```
    Na primeira vez, o .NET baixa os pacotes automaticamente. A opção `--exemplo` cadastra 7 produtos de exemplo se o banco estiver vazio.
-4. Abra **http://localhost:8080/swagger** no navegador. O Swagger lista todas as rotas e permite testar cada uma clicando em **Try it out**.
+6. Abra **http://localhost:8080/swagger** no navegador. O Swagger lista todas as rotas e permite testar cada uma clicando em **Try it out**.
 
-O banco é o arquivo `strockway.db`, criado automaticamente na pasta do projeto. Para começar do zero, pare o servidor e apague esse arquivo.
+Para começar do zero, pare a API e remova o banco `stockway` no MySQL ou execute o script em um banco vazio.
 
 ---
 
@@ -276,12 +287,12 @@ git remote add origin https://github.com/SEU_USUARIO/StrockWay.git
 git push -u origin main
 ```
 
-O `.gitignore` já impede o envio de `bin/`, `obj/` e do banco `strockway.db`.
+O `.gitignore` já impede o envio de `bin/` e `obj/`. Nunca coloque senhas reais no `appsettings.json`; prefira a variável de ambiente `ConnectionStrings__StrockWay`.
 
 ---
 
 ## 7. Observações técnicas
 
 - As operações que alteram o estoque são executadas uma de cada vez. Isso impede que duas saídas simultâneas usem o mesmo saldo.
-- O banco é criado com `EnsureCreated()`. Se, no futuro, você alterar os Models e quiser manter os dados, migre para *EF Core Migrations*.
+- O banco MySQL e as tabelas são criados com `EnsureCreated()` na primeira execução. Se, no futuro, você alterar os Models e quiser manter os dados, migre para *EF Core Migrations*.
 - A API não tem autenticação. Antes de publicar na internet, adicione login, por exemplo com ASP.NET Core Identity e JWT.
