@@ -1,4 +1,4 @@
-namespace StrockWay.Common;
+namespace StockWay.Common;
 
 /// <summary>Data e hora do sistema em um só lugar (usado pelos Models e Services).</summary>
 public static class Relogio

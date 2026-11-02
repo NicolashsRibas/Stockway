@@ -1,8 +1,8 @@
 /*
- * strockway-api.js - Cliente JavaScript para consumir o back-end do StrockWay no front-end.
+ * stockway-api.js - Cliente JavaScript para consumir o back-end do StockWay no front-end.
  *
  * Copie este arquivo para o seu projeto do site e importe:
- *     import { api } from "./strockway-api.js";
+ *     import { api } from "./stockway-api.js";
  *     const dash = await api.dashboard();
  *
  * Todas as funções retornam o conteúdo de "dados" da resposta.

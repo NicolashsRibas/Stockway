@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "StrockWay": {
+    "StockWay": {
       "commandName": "Project",
       "commandLineArgs": "--exemplo",
       "launchBrowser": true,

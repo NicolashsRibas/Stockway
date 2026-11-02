@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using StrockWay.DTOs;
-using StrockWay.Exceptions;
+using StockWay.DTOs;
+using StockWay.Exceptions;
 
-namespace StrockWay.Middleware;
+namespace StockWay.Middleware;
 
 /// <summary>
 /// Converte exceções em respostas JSON padronizadas:

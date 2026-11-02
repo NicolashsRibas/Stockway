@@ -3,11 +3,11 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using StrockWay.Data;
-using StrockWay.Middleware;
-using StrockWay.Services;
+using StockWay.Data;
+using StockWay.Middleware;
+using StockWay.Services;
 
-// StrockWay - API REST de gerenciamento de estoque (almoxarifado)
+// StockWay - API REST de gerenciamento de estoque (almoxarifado)
 // Executar:  dotnet run              (servidor em http://localhost:8080)
 //            dotnet run -- --exemplo (cadastra produtos de exemplo se o banco estiver vazio)
 
@@ -15,11 +15,11 @@ var carregarExemplos = args.Contains("--exemplo");
 var builder = WebApplication.CreateBuilder(args.Where(a => a != "--exemplo").ToArray());
 
 // ---- Model: banco MySQL via Entity Framework ----
-var connectionString = builder.Configuration.GetConnectionString("StrockWay")
+var connectionString = builder.Configuration.GetConnectionString("StockWay")
     ?? throw new InvalidOperationException(
-        "A string de conexão não foi configurada. Defina ConnectionStrings__StrockWay.");
+        "A string de conexão não foi configurada. Defina ConnectionStrings__StockWay.");
 
-builder.Services.AddDbContext<StrockWayContext>(opcoes =>
+builder.Services.AddDbContext<StockWayContext>(opcoes =>
     opcoes.UseMySql(
         connectionString,
         new MySqlServerVersion(new Version(8, 0, 0)),
@@ -53,12 +53,12 @@ builder.Services.AddSwaggerGen(opcoes =>
 {
     opcoes.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "StrockWay API",
+        Title = "StockWay API",
         Version = "v1",
         Description = "API de gerenciamento de estoque (almoxarifado): produtos, movimentações, alertas e dashboard."
     });
 
-    var comentarios = Path.Combine(AppContext.BaseDirectory, "StrockWay.xml");
+    var comentarios = Path.Combine(AppContext.BaseDirectory, "StockWay.xml");
     if (File.Exists(comentarios)) opcoes.IncludeXmlComments(comentarios);
 });
 
@@ -67,7 +67,7 @@ var app = builder.Build();
 // Cria o banco e as tabelas na primeira execução e, se pedido, carrega dados de exemplo.
 using (var escopo = app.Services.CreateScope())
 {
-    var db = escopo.ServiceProvider.GetRequiredService<StrockWayContext>();
+    var db = escopo.ServiceProvider.GetRequiredService<StockWayContext>();
     db.Database.EnsureCreated();
 
     if (carregarExemplos)
@@ -81,7 +81,7 @@ app.UseCors();
 app.UseMiddleware<TratamentoErrosMiddleware>();
 
 app.UseSwagger();
-app.UseSwaggerUI(opcoes => opcoes.DocumentTitle = "StrockWay API");
+app.UseSwaggerUI(opcoes => opcoes.DocumentTitle = "StockWay API");
 
 app.MapControllers();
 app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();

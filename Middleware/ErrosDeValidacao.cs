@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using StrockWay.DTOs;
+using StockWay.DTOs;
 
-namespace StrockWay.Middleware;
+namespace StockWay.Middleware;
 
 /// <summary>
 /// Substitui a resposta padrão de erro de validação do ASP.NET (em inglês) por

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace StrockWay.DTOs;
+namespace StockWay.DTOs;
 
 /// <summary>
 /// Envelope padrão de todas as respostas:

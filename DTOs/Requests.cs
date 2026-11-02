@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace StrockWay.DTOs;
+namespace StockWay.DTOs;
 
 // Dados RECEBIDOS pela API (corpo JSON). Os nomes chegam em snake_case:
 // ValorUnitario <-> "valor_unitario", PesoKg <-> "peso_kg" etc.
