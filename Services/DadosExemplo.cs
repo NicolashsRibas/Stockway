@@ -1,13 +1,13 @@
 using Microsoft.EntityFrameworkCore;
-using StrockWay.Data;
-using StrockWay.DTOs;
+using StockWay.Data;
+using StockWay.DTOs;
 
-namespace StrockWay.Services;
+namespace StockWay.Services;
 
 /// <summary>Cadastra produtos de exemplo (dotnet run -- --exemplo) quando o banco está vazio.</summary>
 public static class DadosExemplo
 {
-    public static async Task CarregarAsync(StrockWayContext db, EstoqueService servico, ILogger logger)
+    public static async Task CarregarAsync(StockWayContext db, EstoqueService servico, ILogger logger)
     {
         if (await db.Produtos.AnyAsync())
         {

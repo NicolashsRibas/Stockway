@@ -1,16 +1,16 @@
 using Microsoft.EntityFrameworkCore;
-using StrockWay.Data;
-using StrockWay.DTOs;
-using StrockWay.Exceptions;
-using StrockWay.Models;
+using StockWay.Data;
+using StockWay.DTOs;
+using StockWay.Exceptions;
+using StockWay.Models;
 
-namespace StrockWay.Services;
+namespace StockWay.Services;
 
 /// <summary>
 /// Orquestra as operações do almoxarifado: busca o produto, chama os métodos do Model
 /// (que fazem as verificações), grava no banco e registra cada alteração no log.
 /// </summary>
-public class EstoqueService(StrockWayContext db)
+public class EstoqueService(StockWayContext db)
 {
     // Uma operação de escrita por vez: evita que duas saídas simultâneas usem o mesmo saldo.
     private static readonly SemaphoreSlim Trava = new(1, 1);

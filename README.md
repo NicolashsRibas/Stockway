@@ -50,16 +50,16 @@ As verificações ficam **dentro dos Models**, de modo que um `Produto` nunca ex
 ## 2. Estrutura MVC
 
 ```
-StrockWay/
+StockWay/
 ├── Program.cs                    # configuração: banco, JSON, CORS, Swagger, rotas
-├── StrockWay.csproj
+├── StockWay.csproj
 ├── appsettings.json              # porta (8080) e conexão padrão com o banco
 ├── Models/                       # MODEL: classes com atributos, campos calculados e verificações
 │   ├── Produto.cs
 │   ├── Movimentacao.cs           #   registro do log
 │   └── Enums.cs                  #   StatusEstoque, StatusValidade, TipoMovimentacao
 ├── Data/
-│   └── StrockWayContext.cs       # Entity Framework (banco MySQL stockway)
+│   └── StockWayContext.cs       # Entity Framework (banco MySQL stockway)
 ├── Services/                     # regras de negócio
 │   ├── EstoqueService.cs         #   cadastro, entradas, saídas, ajustes, log
 │   ├── DashboardService.cs       #   indicadores da dashboard
@@ -80,7 +80,7 @@ StrockWay/
 │   └── RegraNegocioException.cs
 └── docs/
     ├── requisicoes.http          # todas as rotas para testar no VS Code
-    └── frontend/strockway-api.js # cliente JavaScript pronto para o site
+    └── frontend/stockway-api.js # cliente JavaScript pronto para o site
 ```
 
 **Fluxo de uma requisição:**
@@ -109,9 +109,9 @@ Numa API, a "View" do MVC não é uma página HTML, e sim o JSON devolvido. Esse
    Server=localhost;Port=3306;Database=stockway;User=root;Password=;
    ```
    Se sua instalação tiver senha ou outro usuário, defina a variável de ambiente
-   `ConnectionStrings__StrockWay` antes de iniciar. No PowerShell:
+   `ConnectionStrings__StockWay` antes de iniciar. No PowerShell:
    ```powershell
-   $env:ConnectionStrings__StrockWay="Server=localhost;Port=3306;Database=stockway;User=stockway_app;Password=sua_senha;"
+   $env:ConnectionStrings__StockWay="Server=localhost;Port=3306;Database=stockway;User=stockway_app;Password=sua_senha;"
    ```
    O arquivo [`Scripts/Sql/create_schema_tables.sql`](Scripts/Sql/create_schema_tables.sql) também pode ser executado no MySQL Workbench. A aplicação cria o banco e as tabelas automaticamente na primeira execução, portanto executar o script manualmente é opcional.
 5. No terminal, dentro da pasta do projeto:
@@ -230,12 +230,12 @@ Tipos de registro no log: `CADASTRO`, `ENTRADA`, `SAIDA`, `AJUSTE`, `EDICAO`, `R
 ## 5. Como usar no seu site (front-end)
 
 1. Deixe a API rodando (`dotnet run`).
-2. Copie [`docs/frontend/strockway-api.js`](docs/frontend/strockway-api.js) para o projeto do site.
+2. Copie [`docs/frontend/stockway-api.js`](docs/frontend/stockway-api.js) para o projeto do site.
 3. Use as funções prontas:
 
 ```html
 <script type="module">
-  import { api } from "./strockway-api.js";
+  import { api } from "./stockway-api.js";
 
   // Cards da dashboard
   const dash = await api.dashboard();
@@ -281,13 +281,13 @@ Para testar sem o site, use o **Swagger** (`/swagger`) ou abra [`docs/requisicoe
 ```bash
 git init
 git add .
-git commit -m "Primeiro commit: back-end do StrockWay em C# (MVC)"
+git commit -m "Primeiro commit: back-end do StockWay em C# (MVC)"
 git branch -M main
-git remote add origin https://github.com/SEU_USUARIO/StrockWay.git
+git remote add origin https://github.com/SEU_USUARIO/StockWay.git
 git push -u origin main
 ```
 
-O `.gitignore` já impede o envio de `bin/` e `obj/`. Nunca coloque senhas reais no `appsettings.json`; prefira a variável de ambiente `ConnectionStrings__StrockWay`.
+O `.gitignore` já impede o envio de `bin/` e `obj/`. Nunca coloque senhas reais no `appsettings.json`; prefira a variável de ambiente `ConnectionStrings__StockWay`.
 
 ---
 

@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using StrockWay.DTOs;
-using StrockWay.Models;
-using StrockWay.Services;
+using StockWay.DTOs;
+using StockWay.Models;
+using StockWay.Services;
 
-namespace StrockWay.Controllers;
+namespace StockWay.Controllers;
 
 /// <summary>Cadastro e consulta de produtos.</summary>
 [ApiController]

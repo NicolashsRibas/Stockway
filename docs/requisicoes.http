@@ -1,4 +1,4 @@
-### StrockWay - testes da API direto no VS Code
+### StockWay - testes da API direto no VS Code
 ### Instale a extensão "REST Client" (humao.rest-client) e clique em "Send Request"
 ### acima de cada requisição. O servidor precisa estar rodando.
 

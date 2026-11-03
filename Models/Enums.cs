@@ -1,4 +1,4 @@
-namespace StrockWay.Models;
+namespace StockWay.Models;
 
 /// <summary>Situação do saldo em relação aos indicadores de mínimo e máximo.</summary>
 public enum StatusEstoque

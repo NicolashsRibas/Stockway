@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.RegularExpressions;
-using StrockWay.Exceptions;
+using StockWay.Exceptions;
 
-namespace StrockWay.Models;
+namespace StockWay.Models;
 
 /// <summary>
 /// MODEL Produto: atributos de um item do almoxarifado, campos calculados e verificações.

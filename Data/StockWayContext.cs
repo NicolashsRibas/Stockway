@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using StrockWay.Models;
+using StockWay.Models;
 
-namespace StrockWay.Data;
+namespace StockWay.Data;
 
 /// <summary>Acesso ao banco MySQL via Entity Framework Core.</summary>
-public class StrockWayContext(DbContextOptions<StrockWayContext> options) : DbContext(options)
+public class StockWayContext(DbContextOptions<StockWayContext> options) : DbContext(options)
 {
     public DbSet<Produto> Produtos => Set<Produto>();
     public DbSet<Movimentacao> Movimentacoes => Set<Movimentacao>();

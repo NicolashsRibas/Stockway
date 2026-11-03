@@ -1,6 +1,6 @@
-using StrockWay.Exceptions;
+using StockWay.Exceptions;
 
-namespace StrockWay.Models;
+namespace StockWay.Models;
 
 /// <summary>
 /// MODEL Movimentacao: cada registro do histórico (log) do almoxarifado.

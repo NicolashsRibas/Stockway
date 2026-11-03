@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using StrockWay.Data;
-using StrockWay.DTOs;
-using StrockWay.Models;
+using StockWay.Data;
+using StockWay.DTOs;
+using StockWay.Models;
 
-namespace StrockWay.Services;
+namespace StockWay.Services;
 
 /// <summary>Monta os indicadores da dashboard e as listas de alertas.</summary>
-public class DashboardService(StrockWayContext db)
+public class DashboardService(StockWayContext db)
 {
     private const int MaxAlertas = 10;
     private const int MaxRanking = 5;

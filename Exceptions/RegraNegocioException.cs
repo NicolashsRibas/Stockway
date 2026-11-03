@@ -1,4 +1,4 @@
-namespace StrockWay.Exceptions;
+namespace StockWay.Exceptions;
 
 /// <summary>
 /// Erro de regra de negócio ou de validação. O middleware converte em

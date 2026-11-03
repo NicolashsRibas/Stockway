@@ -1,7 +1,7 @@
 using System.Text.Json;
-using StrockWay.Exceptions;
+using StockWay.Exceptions;
 
-namespace StrockWay.Controllers;
+namespace StockWay.Controllers;
 
 /// <summary>Converte textos da query string ("ACIMA_MAXIMO", "baixo") nos enums do sistema.</summary>
 public static class EnumTexto

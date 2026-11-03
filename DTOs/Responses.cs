@@ -1,6 +1,6 @@
-using StrockWay.Models;
+using StockWay.Models;
 
-namespace StrockWay.DTOs;
+namespace StockWay.DTOs;
 
 // Dados ENVIADOS pela API: é a camada "View" do MVC (o formato do JSON de resposta).
 

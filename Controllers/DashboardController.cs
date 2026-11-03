@@ -1,16 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using StrockWay.Data;
-using StrockWay.DTOs;
-using StrockWay.Services;
+using StockWay.Data;
+using StockWay.DTOs;
+using StockWay.Services;
 
-namespace StrockWay.Controllers;
+namespace StockWay.Controllers;
 
 /// <summary>Indicadores da tela inicial e verificação de funcionamento.</summary>
 [ApiController]
 [Route("api")]
 [Produces("application/json")]
-public class DashboardController(DashboardService dashboard, StrockWayContext db) : ControllerBase
+public class DashboardController(DashboardService dashboard, StockWayContext db) : ControllerBase
 {
     /// <summary>Tudo o que a dashboard do site precisa: resumo, gráficos, alertas e últimas movimentações.</summary>
     [HttpGet("dashboard")]

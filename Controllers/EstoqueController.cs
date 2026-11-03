@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
-using StrockWay.DTOs;
-using StrockWay.Exceptions;
-using StrockWay.Models;
-using StrockWay.Services;
+using StockWay.DTOs;
+using StockWay.Exceptions;
+using StockWay.Models;
+using StockWay.Services;
 
-namespace StrockWay.Controllers;
+namespace StockWay.Controllers;
 
 /// <summary>Identificação de produtos em situação de alerta.</summary>
 [ApiController]

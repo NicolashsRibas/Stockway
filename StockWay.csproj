@@ -4,8 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>StrockWay</RootNamespace>
-    <AssemblyName>StrockWay</AssemblyName>
+    <RootNamespace>StockWay</RootNamespace>
+    <AssemblyName>StockWay</AssemblyName>
     <!-- Permite rodar também em máquinas que só têm .NET 9 ou 10 instalado -->
     <RollForward>LatestMajor</RollForward>
     <!-- Gera o XML com os comentários /// para aparecerem no Swagger -->
@@ -15,7 +15,7 @@
 
   <ItemGroup>
     <!-- Disponível em todos os arquivos sem precisar de "using" -->
-    <Using Include="StrockWay.Common" />
+    <Using Include="StockWay.Common" />
   </ItemGroup>
 
   <ItemGroup>
