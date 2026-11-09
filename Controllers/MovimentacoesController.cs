@@ -38,6 +38,7 @@ public class MovimentacoesController(EstoqueService servico) : ControllerBase
     [HttpPost("entrada")]
     public async Task<ActionResult<RespostaApi<ResultadoMovimentacaoResponse>>> Entrada([FromBody] EntradaRequest dados)
     {
+        dados.Responsavel = User.ResponsavelOu(dados.Responsavel);
         var (mov, produto) = await servico.RegistrarEntradaAsync(dados);
         return Criado(mov, produto);
     }
@@ -46,6 +47,7 @@ public class MovimentacoesController(EstoqueService servico) : ControllerBase
     [HttpPost("saida")]
     public async Task<ActionResult<RespostaApi<ResultadoMovimentacaoResponse>>> Saida([FromBody] SaidaRequest dados)
     {
+        dados.Responsavel = User.ResponsavelOu(dados.Responsavel);
         var (mov, produto) = await servico.RegistrarSaidaAsync(dados);
         return Criado(mov, produto);
     }
@@ -54,6 +56,7 @@ public class MovimentacoesController(EstoqueService servico) : ControllerBase
     [HttpPost("ajuste")]
     public async Task<ActionResult<RespostaApi<ResultadoMovimentacaoResponse>>> Ajuste([FromBody] AjusteRequest dados)
     {
+        dados.Responsavel = User.ResponsavelOu(dados.Responsavel);
         var (mov, produto) = await servico.RegistrarAjusteAsync(dados);
         return Criado(mov, produto);
     }

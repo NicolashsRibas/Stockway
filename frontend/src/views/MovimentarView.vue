@@ -29,7 +29,8 @@ const TEXTOS = {
     exemploDaObservacao: 'Ex.: NF 98765, devolução do setor…',
     tipoDaApi: 'ENTRADA',
     tituloDaLista: 'Últimas entradas',
-    textoDoBotao: 'Registrar entrada'
+    textoDoBotao: 'Registrar entrada',
+    confirmacao: 'Entrada registrada em'
   },
   saida: {
     titulo: 'Registrar saída',
@@ -39,7 +40,8 @@ const TEXTOS = {
     exemploDaObservacao: 'Ex.: Requisição 554 — manutenção',
     tipoDaApi: 'SAIDA',
     tituloDaLista: 'Últimas saídas',
-    textoDoBotao: 'Registrar saída'
+    textoDoBotao: 'Registrar saída',
+    confirmacao: 'Saída registrada em'
   },
   ajuste: {
     titulo: 'Ajuste de inventário',
@@ -49,7 +51,8 @@ const TEXTOS = {
     exemploDaObservacao: 'Ex.: Inventário mensal — 2 unidades danificadas',
     tipoDaApi: 'AJUSTE',
     tituloDaLista: 'Últimos ajustes',
-    textoDoBotao: 'Registrar ajuste'
+    textoDoBotao: 'Registrar ajuste',
+    confirmacao: 'Ajuste de inventário registrado em'
   }
 }
 
@@ -185,7 +188,7 @@ async function registrar() {
 
       <div class="cadastro__corpo">
         <AlertaAviso v-if="resultado" tom="ok">
-          {{ resultado.movimentacao.tipo_descricao }} registrada em <strong>{{ resultado.produto.nome }}</strong>.
+          {{ texto.confirmacao }} <strong>{{ resultado.produto.nome }}</strong>.
           Saldo agora: <strong>{{ formatarNumero(resultado.produto.quantidade) }}</strong>.
           <template v-for="alerta in resultado.alertas" :key="alerta"><br />Atenção: {{ alerta }}.</template>
         </AlertaAviso>

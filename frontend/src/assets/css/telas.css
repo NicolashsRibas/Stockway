@@ -69,10 +69,28 @@
 }
 .login__demo .link { border: 0; background: none; padding: 0; margin-top: 4px; }
 
+/* Regras da senha, marcadas conforme a pessoa digita. */
+.login__regras {
+  list-style: none; margin: -8px 0 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 6px 16px;
+  color: var(--neutral-500);
+}
+.login__regras li { display: inline-flex; align-items: center; gap: 6px; transition: color .15s; }
+.login__regra-marca {
+  width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+  border: 1.5px solid var(--neutral-200); display: grid; place-items: center;
+  transition: background-color .15s, border-color .15s;
+}
+.login__regras .login__regra--ok { color: var(--ok-strong); }
+.login__regra--ok .login__regra-marca { background: var(--ok); border-color: var(--ok); color: var(--white); }
+
+.login__trocar { color: var(--neutral-500); margin-top: -4px; }
+
 @media (max-width: 900px) {
   .login { grid-template-columns: minmax(0, 1fr); }
   .login__marca { padding: 32px 24px; gap: 24px; }
-  .login__preview { display: none; }
+  .login__preview, .login__recursos, .login__segmentos { display: none; }
+  .login__painel { place-items: start center; padding: 32px 24px 48px; }
 }
 
 .dash__hero {

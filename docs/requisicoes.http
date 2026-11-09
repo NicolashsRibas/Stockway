@@ -1,32 +1,83 @@
 ### StockWay - testes da API direto no VS Code
 ### Instale a extensão "REST Client" (humao.rest-client) e clique em "Send Request"
 ### acima de cada requisição. O servidor precisa estar rodando.
+### O login é obrigatório: rode primeiro "Criar usuário" (só na primeira vez) e "Entrar",
+### que preenche {{token}} para as outras requisições.
 
 @api = http://localhost:8080/api
+
+### ================= LOGIN =================
+
+### Criar usuário (nome, cargo, e-mail e senha)
+POST {{api}}/auth/cadastro
+Content-Type: application/json
+
+{
+  "nome": "Maria Souza",
+  "cargo": "Almoxarife",
+  "email": "maria@empresa.com",
+  "senha": "trocar123"
+}
+
+### Entrar: guarda o token em {{token}} para as requisições abaixo
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "maria@empresa.com",
+  "senha": "trocar123"
+}
+
+@token = {{login.response.body.dados.token}}
+
+### Quem está logado
+GET {{api}}/auth/eu
+Authorization: Bearer {{token}}
+
+### Entrada com login: o "responsavel" vem do token (o do corpo é ignorado)
+POST {{api}}/movimentacoes/entrada
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "codigo": "PAR-001",
+  "quantidade": 10,
+  "observacao": "NF 12345"
+}
+
+### ================= ESTOQUE =================
 
 ### Verifica se a API está no ar
 GET {{api}}/health
 
 ### Dashboard
 GET {{api}}/dashboard
+Authorization: Bearer {{token}}
 
 ### Listar produtos (todos)
 GET {{api}}/produtos
+Authorization: Bearer {{token}}
 
 ### Buscar produtos por nome/código, com filtro e ordenação
 GET {{api}}/produtos?busca=luva&ordenar=valor_em_estoque
+Authorization: Bearer {{token}}
 
 ### Só produtos com estoque baixo
 GET {{api}}/produtos?status=BAIXO
+Authorization: Bearer {{token}}
 
 ### Só produtos que vencem em breve
 GET {{api}}/produtos?validade=VENCE_EM_BREVE
+Authorization: Bearer {{token}}
 
 ### Consultar um produto (com as últimas movimentações)
 GET {{api}}/produtos/PAR-001
+Authorization: Bearer {{token}}
 
 ### Cadastrar produto
 POST {{api}}/produtos
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -44,6 +95,7 @@ Content-Type: application/json
 
 ### Atualizar produto (envie só o que mudou)
 PUT {{api}}/produtos/LUV-020
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -55,6 +107,7 @@ Content-Type: application/json
 
 ### Remover a validade (produto passa a ser não perecível)
 PUT {{api}}/produtos/LUV-020
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -64,6 +117,7 @@ Content-Type: application/json
 
 ### Registrar ENTRADA (valor_unitario é opcional: recalcula o custo médio)
 POST {{api}}/movimentacoes/entrada
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -76,6 +130,7 @@ Content-Type: application/json
 
 ### Registrar SAÍDA
 POST {{api}}/movimentacoes/saida
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -87,6 +142,7 @@ Content-Type: application/json
 
 ### AJUSTE de inventário (quantidade contada fisicamente; observação obrigatória)
 POST {{api}}/movimentacoes/ajuste
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -98,27 +154,61 @@ Content-Type: application/json
 
 ### Log de movimentações (mais recentes primeiro)
 GET {{api}}/movimentacoes?limite=20
+Authorization: Bearer {{token}}
 
 ### Log filtrado por produto, tipo e período
 GET {{api}}/movimentacoes?codigo=LUV-020&tipo=SAIDA&data_inicio=2026-10-01&data_fim=2026-10-31
+Authorization: Bearer {{token}}
 
 ### Histórico de um produto
 GET {{api}}/produtos/LUV-020/movimentacoes
+Authorization: Bearer {{token}}
 
 ### Produtos com baixo estoque
 GET {{api}}/estoque/baixo
+Authorization: Bearer {{token}}
 
 ### Todos os alertas (baixo, acima do máximo, validade)
 GET {{api}}/estoque/alertas
+Authorization: Bearer {{token}}
 
 ### Vencidos e que vencem nos próximos 60 dias
 GET {{api}}/estoque/validade?dias=60
+Authorization: Bearer {{token}}
 
 ### Remover produto (só funciona com saldo zero)
 DELETE {{api}}/produtos/FIT-002
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "responsavel": "Maria Souza",
   "motivo": "Item descontinuado"
 }
+
+### ================= RELATÓRIO DOS GERENTES (Brevo) =================
+### Só funciona com o token de um usuário cujo cargo contém "gerente".
+
+### Entrar como gerente: guarda o token em {{tokenGerente}}
+# @name loginGerente
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "gerente@empresa.com",
+  "senha": "trocar123"
+}
+
+@tokenGerente = {{loginGerente.response.body.dados.token}}
+
+### Prévia do relatório que sai no fim do dia (não envia nada)
+GET {{api}}/relatorios/diario
+Authorization: Bearer {{tokenGerente}}
+
+### Enviar o relatório agora para todos os gerentes
+POST {{api}}/relatorios/diario/enviar
+Authorization: Bearer {{tokenGerente}}
+
+### Histórico dos envios
+GET {{api}}/relatorios/envios?limite=10
+Authorization: Bearer {{tokenGerente}}

@@ -45,9 +45,12 @@ export function numeroInteiro(texto) {
   return Number.isSafeInteger(numero) ? numero : null
 }
 
+// Lê números no formato brasileiro: "12,50", "1.250,75" e "1.250" (ponto separando milhar = mil
+// duzentos e cinquenta). Também aceita o ponto decimal digitado sem vírgula, como "12.5" ou "0.250".
 export function numeroDecimal(texto) {
   let limpo = String(texto ?? '').trim()
   if (limpo.includes(',')) limpo = limpo.replace(/\./g, '').replace(',', '.')
+  else if (/^[1-9]\d{0,2}(\.\d{3})+$/.test(limpo)) limpo = limpo.replace(/\./g, '')
   if (!/^\d+(\.\d+)?$/.test(limpo)) return null
   return Number(limpo)
 }
@@ -60,7 +63,9 @@ function validarEndereco(valor, nomeDoCampo) {
   return ''
 }
 
-export function validarProduto(form, { cadastro = true } = {}) {
+// Na edição, informe validadeAtual (a validade que o produto já tem) para que um produto
+// vencido possa ter outros dados corrigidos sem ser obrigado a trocar a data.
+export function validarProduto(form, { cadastro = true, validadeAtual = '' } = {}) {
   const erros = {}
 
   if (cadastro) {
@@ -104,7 +109,9 @@ export function validarProduto(form, { cadastro = true } = {}) {
   else if (peso === null || peso <= 0) erros.pesoKg = 'Use um peso maior que zero, como 0,25.'
   else if (peso > LIMITES.pesoMaximo) erros.pesoKg = 'O peso passa do limite de 50.000 kg.'
 
-  if (form.validade && form.validade < hojeNoFormatoDaApi()) erros.validade = 'Essa data já passou.'
+  // Uma data que já passou só é recusada quando foi digitada agora (a API faz a mesma regra).
+  const validadeFoiAlterada = cadastro || form.validade !== (validadeAtual ?? '')
+  if (form.validade && validadeFoiAlterada && form.validade < hojeNoFormatoDaApi()) erros.validade = 'Essa data já passou.'
 
   return erros
 }

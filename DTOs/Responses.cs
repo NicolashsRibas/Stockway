@@ -135,3 +135,26 @@ public record DashboardResponse(
     List<MovimentacaoResponse> UltimasMovimentacoes);
 
 public record HealthResponse(string Status, int Produtos, int Movimentacoes, DateTime HoraServidor);
+
+// ---------------- Login ----------------
+
+/// <summary>Dados públicos do usuário. O hash da senha nunca sai da API.</summary>
+public record UsuarioResponse(
+    int Id,
+    string Nome,
+    string Cargo,
+    string Email,
+    bool Ativo,
+    DateTime CriadoEm,
+    DateTime? UltimoAcessoEm)
+{
+    public static UsuarioResponse De(Usuario u) =>
+        new(u.Id, u.Nome, u.Cargo, u.Email, u.Ativo, u.CriadoEm, u.UltimoAcessoEm);
+}
+
+/// <summary>Resposta do login: o token (enviar como "Authorization: Bearer token") e quem entrou.</summary>
+public record LoginResponse(
+    string Token,
+    string TipoToken,
+    DateTime ExpiraEm,
+    UsuarioResponse Usuario);

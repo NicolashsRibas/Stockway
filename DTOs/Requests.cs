@@ -51,7 +51,7 @@ public class ProdutoCriarRequest
     [Required(ErrorMessage = "o campo 'estoque_maximo' é obrigatório")]
     public int? EstoqueMaximo { get; set; }
 
-    [Required(ErrorMessage = "o campo 'responsavel' é obrigatório")]
+    /// <summary>Quem fez a operação. Com login, é ignorado: o nome vem do token.</summary>
     public string? Responsavel { get; set; }
 }
 
@@ -76,7 +76,7 @@ public class ProdutoAtualizarRequest
     public int? EstoqueMinimo { get; set; }
     public int? EstoqueMaximo { get; set; }
 
-    [Required(ErrorMessage = "o campo 'responsavel' é obrigatório")]
+    /// <summary>Quem fez a operação. Com login, é ignorado: o nome vem do token.</summary>
     public string? Responsavel { get; set; }
 }
 
@@ -97,7 +97,7 @@ public class EntradaRequest
     /// <summary>Opcional: custo desta compra. Recalcula o custo médio do produto.</summary>
     public decimal? ValorUnitario { get; set; }
 
-    [Required(ErrorMessage = "o campo 'responsavel' é obrigatório")]
+    /// <summary>Quem fez a operação. Com login, é ignorado: o nome vem do token.</summary>
     public string? Responsavel { get; set; }
 
     public string? Observacao { get; set; }
@@ -111,7 +111,7 @@ public class SaidaRequest
     [Required(ErrorMessage = "o campo 'quantidade' é obrigatório")]
     public int? Quantidade { get; set; }
 
-    [Required(ErrorMessage = "o campo 'responsavel' é obrigatório")]
+    /// <summary>Quem fez a operação. Com login, é ignorado: o nome vem do token.</summary>
     public string? Responsavel { get; set; }
 
     public string? Observacao { get; set; }
@@ -126,7 +126,7 @@ public class AjusteRequest
     [Required(ErrorMessage = "o campo 'quantidade_contada' é obrigatório")]
     public int? QuantidadeContada { get; set; }
 
-    [Required(ErrorMessage = "o campo 'responsavel' é obrigatório")]
+    /// <summary>Quem fez a operação. Com login, é ignorado: o nome vem do token.</summary>
     public string? Responsavel { get; set; }
 
     /// <summary>Motivo do ajuste (obrigatório).</summary>
@@ -150,3 +150,32 @@ public record FiltroMovimentacoes(
     DateOnly? DataFim,
     int Limite,
     int Offset);
+
+// ---------------- Login ----------------
+
+/// <summary>Cadastro de usuário (tela "criar conta").</summary>
+public class CadastroUsuarioRequest
+{
+    [Required(ErrorMessage = "o campo 'nome' é obrigatório")]
+    public string? Nome { get; set; }
+
+    [Required(ErrorMessage = "o campo 'cargo' é obrigatório")]
+    public string? Cargo { get; set; }
+
+    [Required(ErrorMessage = "o campo 'email' é obrigatório")]
+    public string? Email { get; set; }
+
+    /// <summary>De 8 a 128 caracteres, com pelo menos uma letra e um número.</summary>
+    [Required(ErrorMessage = "o campo 'senha' é obrigatório")]
+    public string? Senha { get; set; }
+}
+
+/// <summary>Login (tela "entrar").</summary>
+public class LoginRequest
+{
+    [Required(ErrorMessage = "o campo 'email' é obrigatório")]
+    public string? Email { get; set; }
+
+    [Required(ErrorMessage = "o campo 'senha' é obrigatório")]
+    public string? Senha { get; set; }
+}

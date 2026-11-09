@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StockWay.Data;
@@ -17,8 +18,9 @@ public class DashboardController(DashboardService dashboard, StockWayContext db)
     public async Task<ActionResult<RespostaApi<DashboardResponse>>> Exibir() =>
         Ok(RespostaApi.Ok(await dashboard.GerarAsync()));
 
-    /// <summary>Verifica se a API está no ar.</summary>
+    /// <summary>Verifica se a API está no ar. Não exige login (a tela de entrada usa esta rota).</summary>
     [HttpGet("health")]
+    [AllowAnonymous]
     public async Task<ActionResult<RespostaApi<HealthResponse>>> Health() =>
         Ok(RespostaApi.Ok(new HealthResponse(
             "ok",

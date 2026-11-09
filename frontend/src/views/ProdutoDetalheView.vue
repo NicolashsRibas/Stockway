@@ -60,7 +60,7 @@ function aoMudarCampo() {
 }
 
 async function salvar() {
-  erros.value = validarProduto(formulario.value, { cadastro: false })
+  erros.value = validarProduto(formulario.value, { cadastro: false, validadeAtual: produto.value.validade })
   if (Object.keys(erros.value).length > 0) return
 
   const alteracoes = montarAlteracoes(formulario.value, produto.value)

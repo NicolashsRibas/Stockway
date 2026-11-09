@@ -7,6 +7,7 @@ import BotaoBase from '../components/BotaoBase.vue'
 import { usuario, sair as encerrarSessao } from '../stores/sessao'
 import { quantidadeParaRepor, atualizarAlertas } from '../stores/alertas'
 import { dataDeHoje } from '../utils/formatar'
+import { usuarioAtual } from '../services/autenticacaoService'
 
 const rota = useRoute()
 const roteador = useRouter()
@@ -42,7 +43,12 @@ watch(
 
 watch(() => rota.fullPath, atualizarAlertas)
 
-onMounted(atualizarAlertas)
+onMounted(() => {
+  atualizarAlertas()
+  // Confere se o token ainda vale (a API pode ter reiniciado ou a conta pode ter sido desativada).
+  // Se não valer, o http.js encerra a sessão e o roteador abre a tela de entrada com o aviso.
+  usuarioAtual().catch(() => {})
+})
 
 function pesquisar() {
   const termo = busca.value.trim()
@@ -50,8 +56,7 @@ function pesquisar() {
 }
 
 function sair() {
-  encerrarSessao()
-  roteador.push('/login')
+  encerrarSessao() // o roteador percebe o fim da sessão e abre a tela de entrada
 }
 </script>
 
@@ -96,7 +101,7 @@ function sair() {
           <AvatarPessoa :nome="usuario?.nome ?? ''" :tamanho="36" />
           <div class="shell__usuario-texto">
             <div class="t-smallm">{{ usuario?.nome }}</div>
-            <div class="t-label shell__cargo">{{ usuario?.funcao || 'Responsável' }}</div>
+            <div class="t-label shell__cargo">{{ usuario?.cargo || 'Responsável' }}</div>
           </div>
           <button type="button" class="shell__sair" title="Sair" aria-label="Sair" @click="sair">
             <IconeSvg nome="sair" :tamanho="18" />
@@ -135,6 +140,11 @@ function sair() {
         <BotaoBase v-if="rota.meta.botaoCadastrar" icone="mais" @click="roteador.push('/produtos/novo')">
           Cadastrar produto
         </BotaoBase>
+
+        <!-- Em telas estreitas o menu lateral some; este botão garante que dá para sair. -->
+        <button type="button" class="shell__sair-topo" :title="`Sair (${usuario?.nome ?? ''})`" aria-label="Sair" @click="sair">
+          <IconeSvg nome="sair" :tamanho="18" />
+        </button>
       </header>
 
       <main :key="rota.path" class="shell__conteudo">

@@ -1,5 +1,6 @@
+import { watch } from 'vue'
 import { createRouter, createWebHashHistory } from 'vue-router'
-import { usuario } from '../stores/sessao'
+import { usuario, avisoDeSaida, estaLogado, sair, MENSAGEM_SESSAO_EXPIRADA } from '../stores/sessao'
 import LayoutPrincipal from '../layouts/LayoutPrincipal.vue'
 import LoginView from '../views/LoginView.vue'
 import DashboardView from '../views/DashboardView.vue'
@@ -79,11 +80,24 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 })
 })
 
+// Endereço para voltar depois de entrar (ex.: o link de um produto aberto antes de a sessão vencer).
+function paraEntrar(caminho) {
+  return caminho && caminho !== '/' && caminho !== '/dashboard' ? { name: 'login', query: { voltar: caminho } } : { name: 'login' }
+}
+
 router.beforeEach((destino) => {
-  const logado = Boolean(usuario.value)
-  if (!destino.meta.publica && !logado) return { name: 'login' }
+  const logado = estaLogado()
+  if (!logado && usuario.value) sair(MENSAGEM_SESSAO_EXPIRADA) // o token venceu com a aba aberta
+  if (!destino.meta.publica && !logado) return paraEntrar(destino.fullPath)
   if (destino.name === 'login' && logado) return { name: 'dashboard' }
   return true
+})
+
+// Quando a sessão acaba (botão Sair ou token recusado pela API), volta para a tela de entrada.
+watch(usuario, (atual) => {
+  const rotaAtual = router.currentRoute.value
+  if (atual || rotaAtual.meta.publica) return
+  router.replace(avisoDeSaida.value ? paraEntrar(rotaAtual.fullPath) : { name: 'login' })
 })
 
 export default router

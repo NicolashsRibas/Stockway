@@ -1,23 +1,64 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import IconeSvg from '../components/IconeSvg.vue'
 import BotaoBase from '../components/BotaoBase.vue'
 import CampoFormulario from '../components/CampoFormulario.vue'
 import AlertaAviso from '../components/AlertaAviso.vue'
-import { entrar } from '../stores/sessao'
+import { entrar, avisoDeSaida } from '../stores/sessao'
 import { verificarApi } from '../services/estoqueService'
+import { fazerLogin, criarConta } from '../services/autenticacaoService'
 import { ENDERECO_DA_API } from '../services/http'
+import { LIMITES_DO_USUARIO, regrasDaSenha, validarLogin, validarCadastro } from '../utils/validarUsuario'
+
+const CARGOS_SUGERIDOS = [
+  'Almoxarife',
+  'Auxiliar de almoxarifado',
+  'Conferente',
+  'Comprador',
+  'Supervisor de estoque',
+  'Gerente'
+]
+
+const TEXTOS = {
+  entrar: {
+    titulo: 'Entrar',
+    explicacao: 'Use o e-mail e a senha da sua conta no StockWay.',
+    botao: 'Entrar',
+    pergunta: 'Ainda não tem conta?',
+    troca: 'Criar conta'
+  },
+  criar: {
+    titulo: 'Criar conta',
+    explicacao: 'Seu nome e seu cargo ficam registrados em cada entrada, saída e ajuste que você fizer.',
+    botao: 'Criar conta',
+    pergunta: 'Já tem conta?',
+    troca: 'Entrar'
+  }
+}
 
 const roteador = useRouter()
+const rota = useRoute()
+const painel = ref(null)
 
-const nome = ref('')
-const funcao = ref('')
-const lembrar = ref(true)
-const erro = ref('')
+const modo = ref('entrar')
+const form = ref({ nome: '', cargo: '', email: '', senha: '' })
+const lembrar = ref(false)
+const mostrarSenha = ref(false)
+const capsLock = ref(false)
+const erros = ref({})
+const erroDaApi = ref('')
+const avisoDoFormulario = ref('')
+const enviando = ref(false)
 const situacaoDaApi = ref('verificando')
 
+const criando = computed(() => modo.value === 'criar')
+const texto = computed(() => TEXTOS[modo.value])
+const regras = computed(() => regrasDaSenha(form.value.senha))
+const aviso = computed(() => avisoDoFormulario.value || (!criando.value ? avisoDeSaida.value : ''))
+
 onMounted(async () => {
+  focarPrimeiroCampo()
   try {
     await verificarApi()
     situacaoDaApi.value = 'ok'
@@ -26,16 +67,71 @@ onMounted(async () => {
   }
 })
 
-function fazerLogin() {
-  const nomeLimpo = nome.value.trim()
-  if (nomeLimpo.length < 2 || nomeLimpo.length > 60) {
-    erro.value = 'Informe seu nome, com 2 a 60 letras.'
+function focarPrimeiroCampo(seletor = 'input') {
+  nextTick(() => painel.value?.querySelector(seletor)?.focus())
+}
+
+function trocarModo() {
+  modo.value = criando.value ? 'entrar' : 'criar'
+  form.value.senha = ''
+  mostrarSenha.value = false
+  erros.value = {}
+  erroDaApi.value = ''
+  avisoDoFormulario.value = ''
+  focarPrimeiroCampo()
+}
+
+function aoDigitar(campo) {
+  if (erros.value[campo]) erros.value = { ...erros.value, [campo]: '' }
+  erroDaApi.value = ''
+}
+
+function conferirCapsLock(evento) {
+  capsLock.value = evento.getModifierState?.('CapsLock') ?? false
+}
+
+function destinoDepoisDeEntrar() {
+  const voltar = rota.query.voltar
+  return typeof voltar === 'string' && voltar.startsWith('/') && !voltar.startsWith('//') ? voltar : '/dashboard'
+}
+
+async function enviar() {
+  erroDaApi.value = ''
+  erros.value = criando.value ? validarCadastro(form.value) : validarLogin(form.value)
+  if (Object.keys(erros.value).length > 0) {
+    focarPrimeiroCampo('[aria-invalid="true"]')
     return
   }
-  entrar({ nome: nomeLimpo, funcao: funcao.value.trim() }, lembrar.value)
-  roteador.push('/dashboard')
+
+  const email = form.value.email.trim()
+  let contaCriada = false
+  enviando.value = true
+  try {
+    if (criando.value) {
+      await criarConta({ nome: form.value.nome.trim(), cargo: form.value.cargo.trim(), email, senha: form.value.senha })
+      contaCriada = true
+    }
+    const resposta = await fazerLogin(email, form.value.senha)
+    entrar(resposta, lembrar.value)
+    roteador.replace(destinoDepoisDeEntrar())
+  } catch (falha) {
+    if (contaCriada) {
+      // A conta existe, mas o login automático falhou (ex.: muitas tentativas): a pessoa entra pela outra tela.
+      modo.value = 'entrar'
+      avisoDoFormulario.value = 'Conta criada. Entre com o seu e-mail e a sua senha.'
+      erroDaApi.value = falha.message
+    } else if (criando.value && falha.status === 409) {
+      erros.value = { email: falha.message }
+      focarPrimeiroCampo('[aria-invalid="true"]')
+    } else {
+      erroDaApi.value = falha.message
+    }
+  } finally {
+    enviando.value = false
+  }
 }
 </script>
+
 <template>
   <div class="login">
     <section class="login__marca">
@@ -70,41 +166,100 @@ function fazerLogin() {
       <span class="t-small login__segmentos">Varejo · Atacado · Logística</span>
     </section>
 
-    <section class="login__painel">
-      <form class="login__form" novalidate @submit.prevent="fazerLogin">
+    <section ref="painel" class="login__painel">
+      <form :key="modo" class="login__form" novalidate @submit.prevent="enviar">
         <header>
-          <h2 class="t-h2">Entrar</h2>
-          <p class="t-small login__sub-form">Diga quem está usando o sistema. O seu nome fica registrado em cada movimentação.</p>
+          <h2 class="t-h2">{{ texto.titulo }}</h2>
+          <p class="t-small login__sub-form">{{ texto.explicacao }}</p>
         </header>
 
+        <AlertaAviso v-if="aviso" tom="info">{{ aviso }}</AlertaAviso>
         <AlertaAviso v-if="situacaoDaApi === 'fora'" tom="erro">
-          A API não respondeu em {{ ENDERECO_DA_API }}. Ligue o back-end com <strong>dotnet run</strong> antes de usar o sistema.
+          A API não respondeu em {{ ENDERECO_DA_API }}. Ligue o back-end com <strong>dotnet run</strong> antes de entrar.
         </AlertaAviso>
+        <AlertaAviso v-if="erroDaApi" tom="erro">{{ erroDaApi }}</AlertaAviso>
+
+        <template v-if="criando">
+          <CampoFormulario
+            v-model="form.nome"
+            rotulo="Nome completo"
+            autocomplete="name"
+            placeholder="Ex.: Maria Souza"
+            :maxlength="LIMITES_DO_USUARIO.nomeMaximo"
+            :erro="erros.nome"
+            @input="aoDigitar('nome')"
+          />
+
+          <CampoFormulario
+            v-model="form.cargo"
+            rotulo="Cargo"
+            autocomplete="organization-title"
+            placeholder="Ex.: Almoxarife"
+            list="login-cargos"
+            :maxlength="LIMITES_DO_USUARIO.cargoMaximo"
+            :erro="erros.cargo"
+            @input="aoDigitar('cargo')"
+          />
+          <datalist id="login-cargos">
+            <option v-for="cargo in CARGOS_SUGERIDOS" :key="cargo" :value="cargo" />
+          </datalist>
+        </template>
 
         <CampoFormulario
-          v-model="nome"
-          rotulo="Seu nome"
-          autocomplete="name"
-          placeholder="Ex.: Maria Souza"
-          maxlength="60"
-          :erro="erro"
-          @input="erro = ''"
+          v-model="form.email"
+          rotulo="E-mail"
+          type="email"
+          inputmode="email"
+          :autocomplete="criando ? 'email' : 'username'"
+          placeholder="nome@empresa.com.br"
+          :maxlength="LIMITES_DO_USUARIO.emailMaximo"
+          :erro="erros.email"
+          @input="aoDigitar('email')"
         />
 
-        <CampoFormulario
-          v-model="funcao"
-          rotulo="Função"
-          opcional
-          placeholder="Ex.: Almoxarife"
-          maxlength="40"
-        />
+        <div class="login__senha">
+          <CampoFormulario
+            v-model="form.senha"
+            rotulo="Senha"
+            :type="mostrarSenha ? 'text' : 'password'"
+            :autocomplete="criando ? 'new-password' : 'current-password'"
+            :maxlength="LIMITES_DO_USUARIO.senhaMaxima"
+            :erro="erros.senha"
+            :ajuda="capsLock ? 'O Caps Lock está ativado.' : ''"
+            @input="aoDigitar('senha')"
+            @keydown="conferirCapsLock"
+            @keyup="conferirCapsLock"
+          />
+          <button
+            type="button"
+            class="login__olho"
+            :aria-label="mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'"
+            :aria-pressed="mostrarSenha ? 'true' : 'false'"
+            @click="mostrarSenha = !mostrarSenha"
+          >
+            <IconeSvg :nome="mostrarSenha ? 'olho-fechado' : 'olho'" :tamanho="18" />
+          </button>
+        </div>
+
+        <ul v-if="criando" class="login__regras t-label" aria-label="Regras da senha">
+          <li v-for="regra in regras" :key="regra.texto" :class="{ 'login__regra--ok': regra.ok }">
+            <span class="login__regra-marca"><IconeSvg v-if="regra.ok" nome="certo" :tamanho="10" /></span>
+            <span class="sr-only">{{ regra.ok ? 'Cumprida:' : 'Falta:' }}</span>
+            {{ regra.texto }}
+          </li>
+        </ul>
 
         <label class="login__lembrar t-small">
           <input v-model="lembrar" type="checkbox" />
-          Lembrar-me neste computador
+          Manter conectado neste computador
         </label>
 
-        <BotaoBase tipo="submit" alto>Entrar</BotaoBase>
+        <BotaoBase tipo="submit" alto :carregando="enviando">{{ texto.botao }}</BotaoBase>
+
+        <p class="login__trocar t-small">
+          {{ texto.pergunta }}
+          <button type="button" class="link link--botao" @click="trocarModo">{{ texto.troca }}</button>
+        </p>
 
         <p class="login__api t-label">
           <span :class="['login__api-ponto', `login__api-ponto--${situacaoDaApi}`]" />

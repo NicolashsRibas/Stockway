@@ -60,6 +60,7 @@ public class ProdutosController(EstoqueService servico) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<RespostaApi<ProdutoResponse>>> Cadastrar([FromBody] ProdutoCriarRequest dados)
     {
+        dados.Responsavel = User.ResponsavelOu(dados.Responsavel);
         var produto = await servico.CadastrarAsync(dados);
         return StatusCode(StatusCodes.Status201Created,
             RespostaApi.Ok(ProdutoResponse.De(produto, Relogio.Hoje)));
@@ -70,6 +71,7 @@ public class ProdutosController(EstoqueService servico) : ControllerBase
     public async Task<ActionResult<RespostaApi<ProdutoResponse>>> Atualizar(string codigo,
         [FromBody] ProdutoAtualizarRequest dados)
     {
+        dados.Responsavel = User.ResponsavelOu(dados.Responsavel);
         var produto = await servico.AtualizarAsync(codigo, dados);
         return Ok(RespostaApi.Ok(ProdutoResponse.De(produto, Relogio.Hoje)));
     }
@@ -82,7 +84,7 @@ public class ProdutosController(EstoqueService servico) : ControllerBase
         [FromQuery] string? responsavel,
         [FromQuery] string? motivo)
     {
-        await servico.RemoverAsync(codigo, dados?.Responsavel ?? responsavel, dados?.Motivo ?? motivo);
+        await servico.RemoverAsync(codigo, User.ResponsavelOu(dados?.Responsavel ?? responsavel), dados?.Motivo ?? motivo);
         return Ok(RespostaApi.Ok<object>(new { mensagem = "produto removido com sucesso" }));
     }
 

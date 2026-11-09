@@ -4,14 +4,22 @@ CREATE DATABASE IF NOT EXISTS stockway
 
 USE stockway;
 
-CREATE TABLE IF NOT EXISTS `user` (
+-- Usuários do login (Models/Usuario.cs). Substitui a antiga tabela `user`.
+-- A senha nunca é guardada: senha_hash tem o hash PBKDF2 ("pbkdf2-sha512$iteracoes$salt$hash").
+-- nome tem até 60 caracteres porque vira o "responsavel" das movimentações.
+CREATE TABLE IF NOT EXISTS usuarios (
     id INT NOT NULL AUTO_INCREMENT,
-    nome VARCHAR(100) NOT NULL,
+    nome VARCHAR(60) NOT NULL,
     cargo VARCHAR(60) NOT NULL,
     email VARCHAR(255) NOT NULL,
-    senha VARCHAR(255) NOT NULL,
+    senha_hash VARCHAR(255) NOT NULL,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em DATETIME(6) NOT NULL,
+    atualizado_em DATETIME(6) NOT NULL,
+    ultimo_acesso_em DATETIME(6) NULL,
 
-    CONSTRAINT pk_user PRIMARY KEY (id)
+    CONSTRAINT pk_usuarios PRIMARY KEY (id),
+    CONSTRAINT ix_usuarios_email UNIQUE (email)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS produtos (
@@ -54,4 +62,23 @@ CREATE TABLE IF NOT EXISTS movimentacoes (
         FOREIGN KEY (produto_id) REFERENCES produtos (id),
     INDEX ix_movimentacoes_produto_codigo (produto_codigo),
     INDEX ix_movimentacoes_data_hora (data_hora)
+) ENGINE = InnoDB;
+
+-- Histórico do relatório diário enviado por e-mail aos gerentes (Models/RelatorioEnviado.cs).
+-- tipo: Automatico | Manual. situacao: Enviado | Falhou | SemDestinatarios.
+CREATE TABLE IF NOT EXISTS relatorios_enviados (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    tipo VARCHAR(20) NOT NULL,
+    data_referencia DATE NOT NULL,
+    periodo_inicio DATETIME(6) NOT NULL,
+    periodo_fim DATETIME(6) NOT NULL,
+    destinatarios VARCHAR(2000) NOT NULL,
+    quantidade_destinatarios INT NOT NULL,
+    situacao VARCHAR(20) NOT NULL,
+    mensagem VARCHAR(500) NULL,
+    solicitado_por VARCHAR(60) NULL,
+    criado_em DATETIME(6) NOT NULL,
+
+    CONSTRAINT pk_relatorios_enviados PRIMARY KEY (id),
+    INDEX ix_relatorios_enviados_data_referencia (data_referencia)
 ) ENGINE = InnoDB;

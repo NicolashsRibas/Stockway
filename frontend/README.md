@@ -29,7 +29,14 @@ Se a API estiver em outro endereço, copie o `.env.example` para `.env`, ajuste 
 
 ## Login
 
-A API não tem login. A tela de entrada serve para saber **quem está usando**: o nome digitado vai como `responsavel` em todo cadastro, edição, entrada, saída e ajuste, e aparece no histórico.
+A tela de entrada (`#/login`) tem dois modos:
+
+- **Entrar:** e-mail e senha (`POST /auth/login`).
+- **Criar conta:** nome, cargo, e-mail e senha (`POST /auth/cadastro`). Depois de criar, já entra direto.
+
+A API devolve um token, que fica guardado em `stores/sessao.js` (no `localStorage` com "Manter conectado", senão no `sessionStorage`). O `services/http.js` manda esse token no cabeçalho `Authorization` de todas as requisições. O nome do usuário logado é o `responsavel` de todo cadastro, edição, entrada, saída e ajuste, e aparece no histórico.
+
+Quando o token vence (depois de 8 horas) ou a API recusa o token, a sessão é encerrada e a tela de entrada aparece com o aviso "Sua sessão expirou". Depois de entrar de novo, a pessoa volta para a tela onde estava.
 
 ## Como o código está organizado
 
@@ -49,7 +56,7 @@ src/
 
 | Tela | Arquivo | Endereço | Rotas da API usadas |
 |---|---|---|---|
-| Entrada (identificação) | `LoginView.vue` | `#/login` | `GET /health` |
+| Entrar e criar conta | `LoginView.vue` | `#/login` | `GET /health`, `POST /auth/login`, `POST /auth/cadastro` |
 | Dashboard | `DashboardView.vue` | `#/dashboard` | `GET /dashboard` |
 | Produtos | `ProdutosView.vue` | `#/produtos` | `GET /produtos` |
 | Cadastrar produto | `ProdutoNovoView.vue` | `#/produtos/novo` | `POST /produtos` |

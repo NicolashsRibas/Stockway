@@ -28,3 +28,18 @@ public enum TipoMovimentacao
     Edicao,
     Remocao
 }
+
+/// <summary>Como o relatório diário foi disparado.</summary>
+public enum TipoEnvioRelatorio
+{
+    Automatico,    // pelo agendador, no horário configurado
+    Manual         // por um gerente, em POST /api/relatorios/diario/enviar
+}
+
+/// <summary>Resultado de um envio do relatório diário.</summary>
+public enum SituacaoEnvioRelatorio
+{
+    Enviado,           // o Brevo aceitou o e-mail
+    Falhou,            // o Brevo recusou ou não respondeu (o agendador tenta de novo)
+    SemDestinatarios   // nenhum usuário ativo com cargo de gerente
+}
